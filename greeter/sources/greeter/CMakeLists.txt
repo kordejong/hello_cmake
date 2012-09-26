@@ -1,12 +1,10 @@
 INCLUDE_DIRECTORIES(
     ${CMAKE_CURRENT_SOURCE_DIR}/..
 )
-ADD_LIBRARY(hcworld
-    SHARED
-    world.cc
+ADD_EXECUTABLE(hcgreeter
+    main.cc
 )
 INSTALL(
-    TARGETS hcworld
+    TARGETS hcgreeter
     RUNTIME DESTINATION bin
-    LIBRARY DESTINATION lib
 )

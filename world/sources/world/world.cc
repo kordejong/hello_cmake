@@ -14,7 +14,7 @@ hc::World::~World()
 }
 
 
-std::string hc::World::name() const
+std::string const& hc::World::name() const
 {
   return _name;
 }
