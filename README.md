@@ -1,4 +1,8 @@
 hello_cmake
 ===========
 
-Project in which I try out CMake code
+Project for trying out CMake code.
+
+Links:
+* http://www.vtk.org/Wiki/CMake/Tutorials/Exporting_and_Importing_Targets
+

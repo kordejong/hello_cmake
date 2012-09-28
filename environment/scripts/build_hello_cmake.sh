@@ -29,7 +29,7 @@ rm -fr $greeter_binaries $greeter_install
 mkdir $greeter_binaries
 cd $greeter_binaries
 
-cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=$build_type -DCMAKE_INSTALL_PREFIX=$greeter_install $greeter_sources
-make
+cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=$build_type -DWORLD_PREFIX=$world_install -DCMAKE_INSTALL_PREFIX=$greeter_install $greeter_sources
+make VERBOSE=1
 make install
 
