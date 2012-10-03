@@ -12,18 +12,18 @@ ADD_LIBRARY(hcworld-shared
 INSTALL(
     TARGETS hcworld-static
     DESTINATION lib
-    EXPORT hcworld-targets
+    EXPORT HCWorldTargets
 )
 INSTALL(
     TARGETS hcworld-shared
-    DESTINATION bin
-    EXPORT hcworld-targets
+    DESTINATION lib
+    EXPORT HCWorldTargets
 )
 INSTALL(
     FILES world.h
     DESTINATION include/world
 )
 INSTALL(
-    EXPORT hcworld-targets
-    DESTINATION lib/hcworld
+    EXPORT HCWorldTargets
+    DESTINATION lib/cmake/hcworld
 )
