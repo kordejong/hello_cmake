@@ -14,11 +14,19 @@ INSTALL(
     DESTINATION lib
     EXPORT HCWorldTargets
 )
-INSTALL(
-    TARGETS hcworld-shared
-    DESTINATION lib
-    EXPORT HCWorldTargets
-)
+IF(APPLE)
+    INSTALL(
+        TARGETS hcworld-shared
+        DESTINATION .
+        EXPORT HCWorldTargets
+    )
+ELSE()
+    INSTALL(
+        TARGETS hcworld-shared
+        DESTINATION lib
+        EXPORT HCWorldTargets
+    )
+ENDIF()
 INSTALL(
     FILES world.h
     DESTINATION include/world

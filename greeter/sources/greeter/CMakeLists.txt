@@ -6,6 +6,7 @@ INCLUDE_DIRECTORIES(
     ${WORLD_PREFIX}/include
 )
 ADD_EXECUTABLE(hcgreeter-static
+    MACOSX_BUNDLE
     main.cc
 )
 TARGET_LINK_LIBRARIES(
@@ -13,6 +14,7 @@ TARGET_LINK_LIBRARIES(
     hcworld-static
 )
 ADD_EXECUTABLE(hcgreeter-shared
+    MACOSX_BUNDLE
     main.cc
 )
 TARGET_LINK_LIBRARIES(
@@ -21,7 +23,8 @@ TARGET_LINK_LIBRARIES(
 )
 INSTALL(
     TARGETS hcgreeter-static hcgreeter-shared
-    DESTINATION bin
+    BUNDLE DESTINATION . COMPONENT Runtime
+    RUNTIME DESTINATION bin COMPONENT Runtime
 )
 IF(ENABLE_FIXUP_BUNDLE)
     IF(UNIX AND NOT APPLE)
@@ -31,13 +34,22 @@ IF(ENABLE_FIXUP_BUNDLE)
                 INSTALL_RPATH "\$ORIGIN"
         )
     ENDIF()
-    SET(APPS "\${CMAKE_INSTALL_PREFIX}/bin/hcgreeter-shared")
+
+    IF(APPLE)
+        SET(APPS "\${CMAKE_INSTALL_PREFIX}/hcgreeter-shared.app")
+    ELSEIF(WIN32)
+        SET(APPS "\${CMAKE_INSTALL_PREFIX}/bin/hcgreeter-shared.exe")
+    ELSE()
+        SET(APPS "\${CMAKE_INSTALL_PREFIX}/bin/hcgreeter-shared")
+    ENDIF()
+
     INSTALL(CODE "
             INCLUDE(BundleUtilities)
             FIXUP_BUNDLE(
                 \"${APPS}\"
                 \"\"
-                \"${WORLD_PREFIX}/lib\")
+                \"${WORLD_PREFIX}\")
         "
         COMPONENT Runtime)
+                # \"${WORLD_PREFIX}/lib\")
 ENDIF()

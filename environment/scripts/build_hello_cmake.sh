@@ -42,53 +42,98 @@ else
     os=`uname`
 fi
 
-check_dependencies() {
-    target=$1
+function executable_name() {
+    local prefix=$1
+    local target=$2
+    local variable_name=$3
+
     if [ $os == "GNU/Linux" ]; then
-        chrpath --list $target
-        ldd $target
+        eval $variable_name=$prefix/$target
     elif [ $os == "Darwin" ]; then
-        otool -L $target
+        eval $variable_name=$prefix/$target.app/Contents/MacOS/$target
     elif [ $os == "Cygwin" ]; then
-        cygcheck $target
+        eval $variable_name=$prefix/$target.exe
     else
         echo "Unknown OS"
         exit 1
     fi
 }
 
-# From build location. Targets are allowed to depend on world's install
-# location.
-$greeter_build/sources/greeter/hcgreeter-static
-check_dependencies $greeter_build/sources/greeter/hcgreeter-shared
-$greeter_build/sources/greeter/hcgreeter-shared
+function execute() {
+    local prefix=$1
+    local target=$2
+    executable_name $prefix $target executable
+    $executable
+}
 
-# We cannot run the executable from the install location since it depends on
-# the world shared library which is installed somewhere else.
+function check_dependencies() {
+    local prefix=$1
+    local target=$2
+    executable_name $prefix $target executable
+
+    if [ $os == "GNU/Linux" ]; then
+        chrpath --list $executable
+        ldd $executable
+    elif [ $os == "Darwin" ]; then
+        otool -L $executable
+    elif [ $os == "Cygwin" ]; then
+        cygcheck $executable
+    else
+        echo "Unknown OS"
+        exit 1
+    fi
+}
+
+# From build location.
+# Targets are allowed to depend on world's install location.
+# TODO Darwin: How to get the install name of world's dll in the exe?
+if [ $os != "Darwin" ]; then
+    execute $greeter_build/sources/greeter hcgreeter-static
+    check_dependencies $greeter_build/sources/greeter hcgreeter-shared
+    execute $greeter_build/sources/greeter hcgreeter-shared
+fi
 
 # From install location.
-$greeter_install/bin/hcgreeter-static
-check_dependencies $greeter_install/bin/hcgreeter-shared
-$greeter_install/bin/hcgreeter-shared
+if [ $os == "Darwin" ]; then
+    execute $greeter_install hcgreeter-static
+    check_dependencies $greeter_install hcgreeter-shared
+    execute $greeter_install hcgreeter-shared
+else
+    execute $greeter_install/bin hcgreeter-static
+    check_dependencies $greeter_install/bin hcgreeter-shared
+    execute $greeter_install/bin hcgreeter-shared
+fi
 
 # Move world's install location to make sure its targets are not used by
 # greeter's targets.
 rm -fr ${world_install}_moved
 mv $world_install ${world_install}_moved
 
-# From install location. Targets are not allowed to depend on world's install
-# location.
-$greeter_install/bin/hcgreeter-static
-check_dependencies $greeter_install/bin/hcgreeter-shared
-$greeter_install/bin/hcgreeter-shared
+# From install location.
+# Targets are not allowed to depend on world's install location.
+if [ $os == "Darwin" ]; then
+    execute $greeter_install hcgreeter-static
+    check_dependencies $greeter_install hcgreeter-shared
+    execute $greeter_install hcgreeter-shared
+else
+    execute $greeter_install/bin hcgreeter-static
+    check_dependencies $greeter_install/bin hcgreeter-shared
+    execute $greeter_install/bin hcgreeter-shared
+fi
 
 # Move greeter's install location to make sure its targets don't depend on the
 # install location.
 rm -fr ${greeter_install}_moved
 mv $greeter_install ${greeter_install}_moved
-${greeter_install}_moved/bin/hcgreeter-static
-check_dependencies ${greeter_install}_moved/bin/hcgreeter-shared
-${greeter_install}_moved/bin/hcgreeter-shared
+
+if [ $os == "Darwin" ]; then
+    execute ${greeter_install}_moved hcgreeter-static
+    check_dependencies ${greeter_install}_moved hcgreeter-shared
+    execute ${greeter_install}_moved hcgreeter-shared
+else
+    execute ${greeter_install}_moved/bin hcgreeter-static
+    check_dependencies ${greeter_install}_moved/bin hcgreeter-shared
+    execute ${greeter_install}_moved/bin hcgreeter-shared
+fi
 
 find ${greeter_install}_moved
-
