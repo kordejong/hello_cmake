@@ -17,3 +17,28 @@ IF(UNIX)
         SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH FALSE)
     ENDIF()
 ENDIF()
+
+MACRO(CONFIGURE_PYTHON_EXTENSION EXTENTION_TARGET EXTENSION_NAME)
+    SET_TARGET_PROPERTIES(${EXTENTION_TARGET}
+        PROPERTIES
+            OUTPUT_NAME "${EXTENSION_NAME}"
+    )
+
+    # Configure suffix and prefix, depending on the Python OS conventions.
+    IF(WIN32)
+        SET_TARGET_PROPERTIES(${EXTENTION_TARGET}
+            PROPERTIES
+                SUFFIX ".pyd"
+        )
+    ELSEIF(APPLE)
+        SET_TARGET_PROPERTIES(${EXTENTION_TARGET}
+            PROPERTIES
+                SUFFIX ".so"
+        )
+    ELSE()
+        SET_TARGET_PROPERTIES(${EXTENTION_TARGET}
+            PROPERTIES
+                PREFIX ""
+        )
+    ENDIF()
+ENDMACRO(CONFIGURE_PYTHON_EXTENSION)

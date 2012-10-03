@@ -27,7 +27,7 @@ cd $build_root
 rm -fr $greeter_build $greeter_install
 mkdir $greeter_build
 cd $greeter_build
-cmake -G "Unix Makefiles" -DCMAKE_MODULE_PATH=$HELLO_CMAKE/environment/templates/cmake -DCMAKE_BUILD_TYPE=$build_type -DWORLD_PREFIX=$world_install -DCMAKE_INSTALL_PREFIX=$greeter_install $greeter_source
+cmake -G "Unix Makefiles" -DCMAKE_MODULE_PATH=$HELLO_CMAKE/environment/templates/cmake -DCMAKE_BUILD_TYPE=$build_type -DCMAKE_PREFIX_PATH=$CMAKE_PREFIX_PATH -DWORLD_PREFIX=$world_install -DCMAKE_INSTALL_PREFIX=$greeter_install $greeter_source
 # make VERBOSE=1
 cd ..
 
