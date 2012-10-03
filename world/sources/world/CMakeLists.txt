@@ -1,24 +1,27 @@
 INCLUDE_DIRECTORIES(
     ${CMAKE_CURRENT_SOURCE_DIR}/..
 )
-ADD_LIBRARY(hcworld
-    STATIC # SHARED
+ADD_LIBRARY(hcworld-static
+    STATIC
+    world.cc
+)
+ADD_LIBRARY(hcworld-shared
+    SHARED
     world.cc
 )
 INSTALL(
-    TARGETS hcworld
-    # RUNTIME DESTINATION bin
-    # LIBRARY DESTINATION lib
+    TARGETS hcworld-static
     DESTINATION lib
     EXPORT hcworld-targets
 )
-# ADD_CUSTOM_TARGET(headers
-#     SOURCES world.h
-# )
+INSTALL(
+    TARGETS hcworld-shared
+    DESTINATION bin
+    EXPORT hcworld-targets
+)
 INSTALL(
     FILES world.h
     DESTINATION include/world
-    # EXPORT hcworld-targets
 )
 INSTALL(
     EXPORT hcworld-targets

@@ -11,7 +11,7 @@ inline void greet(
         Entity const& entity,
         std::ostream& stream)
 {
-    stream << "Hello " << entity.name() << "!" << std::endl;
+    stream << "Hello " << entity.name() << "!\n";
 }
 
 } // namespace hc
