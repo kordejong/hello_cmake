@@ -3,13 +3,22 @@ hello_cmake
 
 Project for trying out CMake code.
 
-The hello_cmake repository contains two projects managed by CMake build scripts. The first project, called `world`, builds a static and shared library. The second project, called `greeter`, builds an executable that depends on the functionality of the `world` project.
+The hello_cmake repository contains two projects managed by CMake build scripts. The first project, called `world`, builds targets with these dependencies:
+* static library
+* shared library
+* application -> `world`'s static library and 3rd party shared library.
+* application -> `world`'s shared library and 3rd party shared library.
+* python extension -> `world`'s shared library and 3rd party shared libraries.
+
+The second project, called `greeter`, builds targets with these dependencies:
+* application -> `world`'s static library and 3rd party shared library.
+* application -> `world`'s shared library and 3rd party shared library.
 
 Requirements:
-* For the `greeter` project it should be easy to find the targets provided by the `world` project. The `world` project must export its targets and `greeter` must import `world`'s targets.
-* After building `greeter`'s executable it must be possible to run the executable without changing the environment settings. `world`'s shared library must be found.
-* After installing the `greeter` project, it must be possible to run the executable without changing the environment settings.
-* After moving the install location of the `greeter` project, it must be possible to run the executable without changing the environment settings.
+* After building a project, one must be able to use the targets without have to tweak the environment settings. Other project's and 3rd party shared libraries the project's targets depend on must be found.
+* After installing a project, and tweaking the environment settings to find other project's and 3rd party shared libraries, one must be able to use the targets.
+* After installing a project's package, one must be able to use the targets with a minimal amount of environment setting tweaks. At most, the user should have to add a single entry to PATH and/or PYTHONPATH.
+* It must be possible  to move a directory containing an installed package. This should not have an effect on the useability of the software.
 
 Notes:
 * Targets often depend on shared libraries not build by the installed project, like boost, icu, qt, etc. If we can assume these will exist at the same location on the install machine, we can set `CMAKE_INSTALL_RPATH_USE_LINK_PATH` to `TRUE`. Otherwise we may need to ship these libraries ourselves, and set `CMAKE_INSTALL_RPATH_USE_LINK_PATH` to `FALSE`.
@@ -21,4 +30,3 @@ See also:
 * CMake RPATH wiki page.
 * HDF5 installs manifest file on Windows. We may need that too.
 * http://www.cmake.org/Wiki/BundleUtilitiesExample
-
