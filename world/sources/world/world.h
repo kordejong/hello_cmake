@@ -18,6 +18,8 @@ public:
 
     std::string const& name            () const;
 
+    void           turn                ();
+
 private:
 
     std::string    _name;

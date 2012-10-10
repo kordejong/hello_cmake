@@ -1,5 +1,13 @@
+# Whether or not to create a bundle with all prerequisites included.
+SET(ENABLE_FIXUP_BUNDLE ON)
+
 IF(UNIX)
+    SET(CPACK_GENERATOR "TGZ")
+
     IF(APPLE)
+        SET(CPACK_BINARY_DRAGNDROP ON)
+
+        # TODO Make sure our exes/dlls find only our dlls.
     ELSE()
         # Update the rpath of exes and dlls.
         SET(CMAKE_SKIP_BUILD_RPATH FALSE)
@@ -16,9 +24,17 @@ IF(UNIX)
         # in the exes and dlls.
         SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH FALSE)
     ENDIF()
+ELSEIF(WIN32)
+    SET(CPACK_GENERATOR "ZIP")
+
+    # TODO Make sure our exes/dlls find only our dlls.
 ENDIF()
 
-MACRO(CONFIGURE_PYTHON_EXTENSION EXTENTION_TARGET EXTENSION_NAME)
+
+MACRO(CONFIGURE_PYTHON_EXTENSION
+        EXTENTION_TARGET
+        EXTENSION_NAME
+        RPATH)
     SET_TARGET_PROPERTIES(${EXTENTION_TARGET}
         PROPERTIES
             OUTPUT_NAME "${EXTENSION_NAME}"
@@ -39,6 +55,7 @@ MACRO(CONFIGURE_PYTHON_EXTENSION EXTENTION_TARGET EXTENSION_NAME)
         SET_TARGET_PROPERTIES(${EXTENTION_TARGET}
             PROPERTIES
                 PREFIX ""
+                INSTALL_RPATH "\$ORIGIN/${RPATH}"
         )
     ENDIF()
 ENDMACRO(CONFIGURE_PYTHON_EXTENSION)
