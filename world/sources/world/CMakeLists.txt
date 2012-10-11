@@ -1,4 +1,5 @@
-FIND_PACKAGE(Boost COMPONENTS chrono python system REQUIRED)
+SET(Boost_USE_STATIC_LIBS OFF)
+FIND_PACKAGE(Boost COMPONENTS chrono python system timer REQUIRED)
 FIND_PACKAGE(PythonLibs REQUIRED)
 
 INCLUDE_DIRECTORIES(
@@ -41,6 +42,7 @@ ADD_EXECUTABLE(turn_world-static
 TARGET_LINK_LIBRARIES(turn_world-static
     world-static
     ${Boost_CHRONO_LIBRARY}
+    ${Boost_TIMER_LIBRARY}
     ${Boost_SYSTEM_LIBRARY}
 )
 INSTALL(
@@ -54,6 +56,7 @@ ADD_EXECUTABLE(turn_world-shared
 TARGET_LINK_LIBRARIES(turn_world-shared
     world-shared
     ${Boost_CHRONO_LIBRARY}
+    ${Boost_TIMER_LIBRARY}
     ${Boost_SYSTEM_LIBRARY}
 )
 INSTALL(

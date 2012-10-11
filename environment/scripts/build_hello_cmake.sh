@@ -3,7 +3,7 @@ set -e
 
 ld_library_path="$1"
 shift
-cmake_options="$*"
+general_cmake_options="$*"
 
 check_world_dependencies=1
 check_greeter_dependencies=1
@@ -174,11 +174,11 @@ wrld_pkg_bld="$build_root/world_package_build"
 wrld_inst="$build_root/world_install"
 wrld_unpk="$build_root/world_unpack"
 
-cmake_options="
+world_cmake_options="
     -DCMAKE_MODULE_PATH:PATH="$HELLO_CMAKE_ROOT/environment/templates/cmake"
     -DCMAKE_BUILD_TYPE=$build_type
     -DCMAKE_INSTALL_PREFIX:PATH="$wrld_inst"
-    $cmake_options
+    $general_cmake_options
 "
 
 cd $build_root
@@ -188,13 +188,13 @@ mkdir $wrld_inst_bld $wrld_pkg_bld $wrld_unpk
 # Configure for standard install target, without creating a self-contained
 # package.
 cd $wrld_inst_bld
-cmake -L $cmake_options -DHC_ENABLE_FIXUP_BUNDLE:BOOL=OFF $wrld_src
+cmake -L $world_cmake_options -DHC_ENABLE_FIXUP_BUNDLE:BOOL=OFF $wrld_src
 cd ..
 
 # Exectute from build directory should just work.
 cmake --build $wrld_inst_bld
 if [ $check_world_dependencies == 1 ]; then
-    print_message "Dependencies in $world_build."
+    print_message "Dependencies in $wrld_inst_bld:"
     check_exe_dependencies $wrld_inst_bld/sources/world turn_world-static
     check_exe_dependencies $wrld_inst_bld/sources/world turn_world-shared
     check_pyd_dependencies $wrld_inst_bld/sources/world world
@@ -205,7 +205,7 @@ execute $wrld_inst_bld/sources/world turn_world-shared
 # Exectute from install directory should work, given the ld_library_path.
 cmake --build $wrld_inst_bld --target install
 if [ $check_world_dependencies == 1 ]; then
-    print_message "Dependencies in $world_inst."
+    print_message "Dependencies in $world_inst:"
     check_exe_dependencies $wrld_inst/bin turn_world-static $ld_library_path
     check_exe_dependencies $wrld_inst/bin turn_world-shared $ld_library_path
     check_pyd_dependencies $wrld_inst/python/world world $ld_library_path
@@ -215,14 +215,14 @@ execute $wrld_inst/bin turn_world-shared $ld_library_path
 
 # Configure for package target, creating a self-contained package.
 cd $wrld_pkg_bld
-cmake -L $cmake_options -DHC_ENABLE_FIXUP_BUNDLE:BOOL=ON $wrld_src
+cmake -L $world_cmake_options -DHC_ENABLE_FIXUP_BUNDLE:BOOL=ON $wrld_src
 cd ..
 
 # Exectute from build directory should just work. Absolute paths to shared
 # libs baked into exes and dlls.
 cmake --build $wrld_pkg_bld
 if [ $check_world_dependencies == 1 ]; then
-    print_message "Dependencies in $world_build."
+    print_message "Dependencies in $wrld_pkg_bld:"
     check_exe_dependencies $wrld_pkg_bld/sources/world turn_world-static
     check_exe_dependencies $wrld_pkg_bld/sources/world turn_world-shared
     check_pyd_dependencies $wrld_pkg_bld/sources/world world
@@ -235,7 +235,7 @@ execute $wrld_pkg_bld/sources/world turn_world-shared
 cmake --build $wrld_pkg_bld --target package
 unpack_package "WORLD" $wrld_pkg_bld $wrld_unpk prefix
 if [ $check_world_dependencies == 1 ]; then
-    print_message "Dependencies in $prefix."
+    print_message "Dependencies in $prefix:"
     check_exe_dependencies $prefix/bin turn_world-static
     check_exe_dependencies $prefix/bin turn_world-shared
     check_pyd_dependencies $prefix/python/world world
@@ -251,12 +251,12 @@ grtr_pkg_bld="$build_root/greeter_package_build"
 grtr_inst="$build_root/greeter_install"
 grtr_unpk="$build_root/greeter_unpack"
 
-cmake_options="
+greeter_cmake_options="
     -DCMAKE_MODULE_PATH="$HELLO_CMAKE_ROOT/environment/templates/cmake"
     -DCMAKE_BUILD_TYPE=$build_type
     -DCMAKE_INSTALL_PREFIX="$grtr_inst"
     -DWORLD_ROOT="$wrld_inst"
-    $cmake_options
+    $general_cmake_options
 "
 
 cd $build_root
@@ -266,18 +266,30 @@ mkdir $grtr_inst_bld $grtr_pkg_bld $grtr_unpk
 # Configure for standard install target, without creating a self-contained
 # package.
 cd $grtr_inst_bld
-cmake -L $cmake_options -DHC_ENABLE_FIXUP_BUNDLE:BOOL=OFF $grtr_src
+cmake -L $greeter_cmake_options -DHC_ENABLE_FIXUP_BUNDLE:BOOL=OFF $grtr_src
 cd ..
 
 # Execute from build directory should just work.
 cmake --build $grtr_inst_bld
 if [ $check_greeter_dependencies == 1 ]; then
-    print_message "Dependencies in $grtr_build."
+    print_message "Dependencies in $grtr_build:"
     check_exe_dependencies $grtr_inst_bld/sources/greeter greeter-static
     check_exe_dependencies $grtr_inst_bld/sources/greeter greeter-shared
 fi
 execute $grtr_inst_bld/sources/greeter greeter-static
 execute $grtr_inst_bld/sources/greeter greeter-shared
+
+# Exectute from install directory should work, given the ld_library_path.
+cmake --build $grtr_inst_bld --target install
+if [ $check_greeter_dependencies == 1 ]; then
+    print_message "Dependencies in $grtr_inst:"
+    check_exe_dependencies $grtr_inst/bin greeter-static \
+        $ld_library_path:$wrld_inst/lib
+    check_exe_dependencies $grtr_inst/bin greeter-shared \
+        $ld_library_path:$wrld_inst/lib
+fi
+execute $grtr_inst/bin greeter-static $ld_library_path:$wrld_inst/lib
+execute $grtr_inst/bin greeter-shared $ld_library_path:$wrld_inst/lib
 
 exit 0
 
@@ -285,7 +297,6 @@ exit 0
 
 
 
-cmake --build $grtr_inst_bld --target install
 cmake --build $grtr_inst_bld --target package
 
 # Run executable. --------------------------------------------------------------

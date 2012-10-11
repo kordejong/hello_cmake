@@ -18,7 +18,9 @@ public:
 
     std::string const& name            () const;
 
-    void           turn                ();
+    // double         age                 () const;
+
+    void           spin                ();
 
 private:
 
