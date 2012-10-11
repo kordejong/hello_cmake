@@ -1,7 +1,14 @@
 hello_cmake
 ===========
-
 Project for trying out CMake code.
+
+Requirements:
+* After building a project, one must be able to use the targets without have to tweak the environment settings. Other project's and 3rd party shared libraries the project's targets depend on must be found.
+* After installing a project, and tweaking the environment settings to find other project's and 3rd party shared libraries, one must be able to use the targets.
+* After installing a project's package, one must be able to use the targets with a minimal amount of environment setting tweaks. At most, the user should have to add a single entry to PATH and/or PYTHONPATH.
+* It must be possible  to move a directory containing an installed package. This should not have an effect on the useability of the software.
+
+This project is about meeting these requirements. There is a minimal amount of C++ source code in this project. Just enough to make sure that there are some interesting dependencies between various targets and 3rd party shared libraries.
 
 The hello_cmake repository contains two projects managed by CMake build scripts. The first project, called `world`, builds targets with these dependencies:
 * static library
@@ -13,12 +20,6 @@ The hello_cmake repository contains two projects managed by CMake build scripts.
 The second project, called `greeter`, builds targets with these dependencies:
 * application -> `world`'s static library and 3rd party shared library.
 * application -> `world`'s shared library and 3rd party shared library.
-
-Requirements:
-* After building a project, one must be able to use the targets without have to tweak the environment settings. Other project's and 3rd party shared libraries the project's targets depend on must be found.
-* After installing a project, and tweaking the environment settings to find other project's and 3rd party shared libraries, one must be able to use the targets.
-* After installing a project's package, one must be able to use the targets with a minimal amount of environment setting tweaks. At most, the user should have to add a single entry to PATH and/or PYTHONPATH.
-* It must be possible  to move a directory containing an installed package. This should not have an effect on the useability of the software.
 
 Notes:
 * Targets often depend on shared libraries not build by the installed project, like boost, icu, qt, etc. If we can assume these will exist at the same location on the install machine, we can set `CMAKE_INSTALL_RPATH_USE_LINK_PATH` to `TRUE`. Otherwise we may need to ship these libraries ourselves, and set `CMAKE_INSTALL_RPATH_USE_LINK_PATH` to `FALSE`.
