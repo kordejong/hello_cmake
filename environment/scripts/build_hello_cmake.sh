@@ -4,7 +4,9 @@ set -e
 ld_library_path="$1"
 shift
 cmake_options="$*"
-echo $cmake_options
+
+check_world_dependencies=1
+check_greeter_dependencies=0
 
 if [ `uname -o 2>/dev/null` ]; then
     os=`uname -o`
@@ -165,11 +167,10 @@ build_type="Release"
 build_root="$HOME/tmp"
 
 
-# set -x
-
 # Build, install, package the world project. -----------------------------------
 world_source="$HELLO_CMAKE_ROOT/world"
-world_build="$build_root/world_build"
+world_install_build="$build_root/world_install_build"
+world_package_build="$build_root/world_package_build"
 world_install="$build_root/world_install"
 world_unpack="$build_root/world_unpack"
 
@@ -181,54 +182,64 @@ cmake_options="
 "
 
 cd $build_root
-rm -fr $world_install $world_unpack
-mkdir $world_unpack
+rm -fr $world_install_build $world_package_build $world_install $world_unpack
+mkdir $world_install_build $world_package_build $world_unpack
 
 # Configure for standard install target, without creating a self-contained
 # package.
-rm -fr $world_build; mkdir $world_build; cd $world_build
+cd $world_install_build
 cmake -L $cmake_options -DHC_ENABLE_FIXUP_BUNDLE:BOOL=OFF $world_source
 cd ..
 
 # Exectute from build directory should just work.
-cmake --build $world_build
-print_message "Dependencies in $world_build."
-check_exe_dependencies $world_build/sources/world turn_world-shared
-check_pyd_dependencies $world_build/sources/world world
-execute $world_build/sources/world turn_world-static
-execute $world_build/sources/world turn_world-shared
+cmake --build $world_install_build
+if [ $check_world_dependencies == 1 ]; then
+    print_message "Dependencies in $world_build."
+    check_exe_dependencies $world_install_build/sources/world turn_world-static
+    check_exe_dependencies $world_install_build/sources/world turn_world-shared
+    check_pyd_dependencies $world_install_build/sources/world world
+fi
+execute $world_install_build/sources/world turn_world-static
+execute $world_install_build/sources/world turn_world-shared
 
 # Exectute from install directory should work, given the ld_library_path.
-cmake --build $world_build --target install
-print_message "Dependencies in $world_install."
-check_exe_dependencies $world_install/bin turn_world-shared $ld_library_path
-check_pyd_dependencies $world_install/python/world world $ld_library_path
+cmake --build $world_install_build --target install
+if [ $check_world_dependencies == 1 ]; then
+    print_message "Dependencies in $world_install."
+    check_exe_dependencies $world_install/bin turn_world-static $ld_library_path
+    check_exe_dependencies $world_install/bin turn_world-shared $ld_library_path
+    check_pyd_dependencies $world_install/python/world world $ld_library_path
+fi
 execute $world_install/bin turn_world-static $ld_library_path
 execute $world_install/bin turn_world-shared $ld_library_path
 
 # Configure for package target, creating a self-contained package.
-rm -fr $world_build; mkdir $world_build; cd $world_build
+cd $world_package_build
 cmake -L $cmake_options -DHC_ENABLE_FIXUP_BUNDLE:BOOL=ON $world_source
 cd ..
 
 # Exectute from build directory should just work. Absolute paths to shared
 # libs baked into exes and dlls.
-cmake --build $world_build
-print_message "Dependencies in $world_build."
-check_exe_dependencies $world_build/sources/world turn_world-static
-check_exe_dependencies $world_build/sources/world turn_world-shared
-check_pyd_dependencies $world_build/sources/world world
-execute $world_build/sources/world turn_world-static
-execute $world_build/sources/world turn_world-shared
+cmake --build $world_package_build
+if [ $check_world_dependencies == 1 ]; then
+    print_message "Dependencies in $world_build."
+    check_exe_dependencies $world_package_build/sources/world turn_world-static
+    check_exe_dependencies $world_package_build/sources/world turn_world-shared
+    check_pyd_dependencies $world_package_build/sources/world world
+fi
+execute $world_package_build/sources/world turn_world-static
+execute $world_package_build/sources/world turn_world-shared
 
-# Exectute from install directory should just work. Relative paths to shared
+# Exectute from unpack directory should just work. Relative paths to shared
 # libs baked into exes and dlls.
-cmake --build $world_build --target package
-unpack_package "WORLD" $world_build $world_unpack prefix
-print_message "Dependencies in $prefix."
-check_exe_dependencies $prefix/bin turn_world-static
-check_exe_dependencies $prefix/bin turn_world-shared
-check_pyd_dependencies $prefix/python/world world
+cmake --build $world_package_build --target package
+unpack_package "WORLD" $world_package_build $world_unpack prefix
+if [ $check_world_dependencies == 1 ]; then
+    print_message "Dependencies in $prefix."
+    check_exe_dependencies $prefix/bin turn_world-static
+    check_exe_dependencies $prefix/bin turn_world-shared
+    check_pyd_dependencies $prefix/python/world world
+fi
 execute $prefix/bin turn_world-static
 execute $prefix/bin turn_world-shared
 
