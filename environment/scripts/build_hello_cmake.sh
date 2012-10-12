@@ -5,7 +5,7 @@ ld_library_path="$1"
 shift
 general_cmake_options="$*"
 
-check_world_dependencies=0
+check_world_dependencies=1
 check_greeter_dependencies=1
 
 width_in_characters=$(tput cols)
@@ -212,6 +212,8 @@ if [ $check_world_dependencies == 1 ]; then
 fi
 execute $wrld_inst_bld/sources/world turn_world-static
 execute $wrld_inst_bld/sources/world turn_world-shared
+PYTHONPATH=$wrld_inst_bld/sources/world python -c "import world; \
+    print(\"Hello {} from Python!\".format(world.World().name))"
 
 # Exectute from install directory should work, given the ld_library_path.
 new_test "Execute from install build directory"
@@ -224,6 +226,9 @@ if [ $check_world_dependencies == 1 ]; then
 fi
 execute $wrld_inst/bin turn_world-static $ld_library_path
 execute $wrld_inst/bin turn_world-shared $ld_library_path
+LD_LIBRARY_PATH=$ld_library_path PYTHONPATH=$wrld_inst/python/world \
+    python -c "import world; \
+        print(\"Hello {} from Python!\".format(world.World().name))"
 
 # Configure for package target, creating a self-contained package.
 cd $wrld_pkg_bld
@@ -242,6 +247,8 @@ if [ $check_world_dependencies == 1 ]; then
 fi
 execute $wrld_pkg_bld/sources/world turn_world-static
 execute $wrld_pkg_bld/sources/world turn_world-shared
+PYTHONPATH=$wrld_pkg_bld/sources/world python -c "import world; \
+    print(\"Hello {} from Python!\".format(world.World().name))"
 
 # Exectute from unpack directory should just work. Relative paths to shared
 # libs baked into exes and dlls.
@@ -256,6 +263,8 @@ if [ $check_world_dependencies == 1 ]; then
 fi
 execute $prefix/bin turn_world-static
 execute $prefix/bin turn_world-shared
+PYTHONPATH=$prefix/python/world python -c "import world; \
+    print(\"Hello {} from Python!\".format(world.World().name))"
 
 
 # Build, install, package the greeter project. ---------------------------------
@@ -330,11 +339,20 @@ cmake --build $grtr_pkg_bld --target package
 unpack_package "GREETER" $grtr_pkg_bld $grtr_unpk prefix
 if [ $check_greeter_dependencies == 1 ]; then
     print_message "Dependencies in $prefix:"
+    # check_exe_dependencies $prefix/bin turn_world-static
+    # check_exe_dependencies $prefix/bin turn_world-shared
     check_exe_dependencies $prefix/bin greeter-static
     check_exe_dependencies $prefix/bin greeter-shared
+    # check_pyd_dependencies $prefix/python/world world
 fi
+# execute $prefix/bin turn_world-static
+# execute $prefix/bin turn_world-shared
 execute $prefix/bin greeter-static
 execute $prefix/bin greeter-shared
+# PYTHONPATH=$prefix/python/world python -c "import world; \
+#     print(\"Hello {} from Python!\".format(world.World().name))"
+
+
 
 
 ### # Run executable. --------------------------------------------------------------

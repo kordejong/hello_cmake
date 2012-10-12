@@ -48,6 +48,7 @@ TARGET_LINK_LIBRARIES(turn_world-static
 INSTALL(
     TARGETS turn_world-static
     DESTINATION bin
+    EXPORT WorldTargets
 )
 
 ADD_EXECUTABLE(turn_world-shared
@@ -62,6 +63,7 @@ TARGET_LINK_LIBRARIES(turn_world-shared
 INSTALL(
     TARGETS turn_world-shared
     DESTINATION bin
+    EXPORT WorldTargets
 )
 
 ADD_LIBRARY(world-python
@@ -70,7 +72,9 @@ ADD_LIBRARY(world-python
 )
 TARGET_LINK_LIBRARIES(world-python
     world-shared
+    ${Boost_CHRONO_LIBRARY}
     ${Boost_PYTHON_LIBRARY}
+    ${Boost_SYSTEM_LIBRARY}
     ${PYTHON_LIBRARIES}
 )
 IF(${HC_ENABLE_FIXUP_BUNDLE})

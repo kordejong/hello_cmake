@@ -3,12 +3,12 @@
 #include "world/world.h"
 
 
-BOOST_PYTHON_MODULE(hcworld)
+BOOST_PYTHON_MODULE(world)
 {
   namespace bp = boost::python;
 
   bp::class_<hc::World>("World")
-      .def("name", &hc::World::name,
-          bp::return_value_policy<bp::reference_existing_object>())
+      .add_property("name", bp::make_function(&hc::World::name,
+          bp::return_value_policy<bp::copy_const_reference>()))
       ;
 }
