@@ -64,4 +64,5 @@ See also:
 * CMake RPATH wiki page.
 * HDF5 installs manifest file on Windows. We may need that too.
 * http://www.cmake.org/Wiki/BundleUtilitiesExample
+* http://www.vtk.org/Wiki/CMake/Tutorials/How_to_create_a_ProjectConfig.cmake_file
 
