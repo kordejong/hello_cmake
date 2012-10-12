@@ -5,8 +5,11 @@ ld_library_path="$1"
 shift
 general_cmake_options="$*"
 
-check_world_dependencies=1
+check_world_dependencies=0
 check_greeter_dependencies=1
+
+width_in_characters=$(tput cols)
+eval printf -v header_line '%.0s-' {1..$width_in_characters}
 
 if [ `uname -o 2>/dev/null` ]; then
     os=`uname -o`
@@ -98,9 +101,16 @@ function check_pyd_dependencies() {
 
 function print_message() {
     local message=$1
-    echo "*********************************************************************"
-    echo "* $message"
-    echo "*********************************************************************"
+    echo $header_line
+    echo "$message"
+}
+
+
+function new_test() {
+    local message=$1
+    echo $header_line
+    echo "$message"
+    echo $header_line
 }
 
 
@@ -192,6 +202,7 @@ cmake -L $world_cmake_options -DHC_ENABLE_FIXUP_BUNDLE:BOOL=OFF $wrld_src
 cd ..
 
 # Exectute from build directory should just work.
+new_test "Execute from build directory"
 cmake --build $wrld_inst_bld
 if [ $check_world_dependencies == 1 ]; then
     print_message "Dependencies in $wrld_inst_bld:"
@@ -203,6 +214,7 @@ execute $wrld_inst_bld/sources/world turn_world-static
 execute $wrld_inst_bld/sources/world turn_world-shared
 
 # Exectute from install directory should work, given the ld_library_path.
+new_test "Execute from install build directory"
 cmake --build $wrld_inst_bld --target install
 if [ $check_world_dependencies == 1 ]; then
     print_message "Dependencies in $world_inst:"
@@ -220,6 +232,7 @@ cd ..
 
 # Exectute from build directory should just work. Absolute paths to shared
 # libs baked into exes and dlls.
+new_test "Execute from package build directory"
 cmake --build $wrld_pkg_bld
 if [ $check_world_dependencies == 1 ]; then
     print_message "Dependencies in $wrld_pkg_bld:"
@@ -232,6 +245,7 @@ execute $wrld_pkg_bld/sources/world turn_world-shared
 
 # Exectute from unpack directory should just work. Relative paths to shared
 # libs baked into exes and dlls.
+new_test "Execute from unpack directory"
 cmake --build $wrld_pkg_bld --target package
 unpack_package "WORLD" $wrld_pkg_bld $wrld_unpk prefix
 if [ $check_world_dependencies == 1 ]; then
@@ -270,9 +284,10 @@ cmake -L $greeter_cmake_options -DHC_ENABLE_FIXUP_BUNDLE:BOOL=OFF $grtr_src
 cd ..
 
 # Execute from build directory should just work.
+new_test "Execute from install build directory"
 cmake --build $grtr_inst_bld
 if [ $check_greeter_dependencies == 1 ]; then
-    print_message "Dependencies in $grtr_build:"
+    print_message "Dependencies in $grt_inst_bld:"
     check_exe_dependencies $grtr_inst_bld/sources/greeter greeter-static
     check_exe_dependencies $grtr_inst_bld/sources/greeter greeter-shared
 fi
@@ -280,6 +295,7 @@ execute $grtr_inst_bld/sources/greeter greeter-static
 execute $grtr_inst_bld/sources/greeter greeter-shared
 
 # Exectute from install directory should work, given the ld_library_path.
+new_test "Execute from install directory"
 cmake --build $grtr_inst_bld --target install
 if [ $check_greeter_dependencies == 1 ]; then
     print_message "Dependencies in $grtr_inst:"
@@ -291,65 +307,87 @@ fi
 execute $grtr_inst/bin greeter-static $ld_library_path:$wrld_inst/lib
 execute $grtr_inst/bin greeter-shared $ld_library_path:$wrld_inst/lib
 
-exit 0
+# Configure for package target, creating a self-contained package.
+cd $grtr_pkg_bld
+cmake -L $greeter_cmake_options -DHC_ENABLE_FIXUP_BUNDLE:BOOL=ON $grtr_src
+cd ..
 
-
-
-
-
-cmake --build $grtr_inst_bld --target package
-
-# Run executable. --------------------------------------------------------------
-# From build location.
-# Targets are allowed to depend on world's install location.
-# TODO Darwin: How to get the install name of world's dll in the exe?
-if [ $os != "Darwin" ]; then
-    execute $grtr_inst_bld/sources/greeter hcgreeter-static
-    check_exe_dependencies $grtr_inst_bld/sources/greeter hcgreeter-shared
-    execute $grtr_inst_bld/sources/greeter hcgreeter-shared
+# Execute from build directory should just work.
+new_test "Execute from package build directory"
+cmake --build $grtr_pkg_bld
+if [ $check_greeter_dependencies == 1 ]; then
+    print_message "Dependencies in $grtr_pkg_bld:"
+    check_exe_dependencies $grtr_pkg_bld/sources/greeter greeter-static
+    check_exe_dependencies $grtr_pkg_bld/sources/greeter greeter-shared
 fi
+execute $grtr_pkg_bld/sources/greeter greeter-static
+execute $grtr_pkg_bld/sources/greeter greeter-shared
 
-# From install location.
-if [ $os == "Darwin" ]; then
-    execute $grtr_inst hcgreeter-static
-    check_exe_dependencies $grtr_inst hcgreeter-shared
-    execute $grtr_inst hcgreeter-shared
-else
-    execute $grtr_inst/bin hcgreeter-static
-    check_exe_dependencies $grtr_inst/bin hcgreeter-shared
-    execute $grtr_inst/bin hcgreeter-shared
+# Exectute from unpack directory should just work. Relative paths to shared
+# libs baked into exes and dlls.
+new_test "Execute from unpack directory"
+cmake --build $grtr_pkg_bld --target package
+unpack_package "GREETER" $grtr_pkg_bld $grtr_unpk prefix
+if [ $check_greeter_dependencies == 1 ]; then
+    print_message "Dependencies in $prefix:"
+    check_exe_dependencies $prefix/bin greeter-static
+    check_exe_dependencies $prefix/bin greeter-shared
 fi
+execute $prefix/bin greeter-static
+execute $prefix/bin greeter-shared
 
-# Move world's install location to make sure its targets are not used by
-# greeter's targets.
-rm -fr ${wrld_inst}_moved
-mv $wrld_inst ${wrld_inst}_moved
 
-# From install location.
-# Targets are not allowed to depend on world's install location.
-if [ $os == "Darwin" ]; then
-    execute $grtr_inst hcgreeter-static
-    check_exe_dependencies $grtr_inst hcgreeter-shared
-    execute $grtr_inst hcgreeter-shared
-else
-    execute $grtr_inst/bin hcgreeter-static
-    check_exe_dependencies $grtr_inst/bin hcgreeter-shared
-    execute $grtr_inst/bin hcgreeter-shared
-fi
-
-# Move greeter's install location to make sure its targets don't depend on the
-# install location.
-rm -fr ${grtr_inst}_moved
-mv $grtr_inst ${grtr_inst}_moved
-
-if [ $os == "Darwin" ]; then
-    execute ${grtr_inst}_moved hcgreeter-static
-    check_exe_dependencies ${grtr_inst}_moved hcgreeter-shared
-    execute ${grtr_inst}_moved hcgreeter-shared
-else
-    execute ${grtr_inst}_moved/bin hcgreeter-static
-    check_exe_dependencies ${grtr_inst}_moved/bin hcgreeter-shared
-    execute ${grtr_inst}_moved/bin hcgreeter-shared
-fi
-
-find ${grtr_inst}_moved
+### # Run executable. --------------------------------------------------------------
+### # From build location.
+### # Targets are allowed to depend on world's install location.
+### # TODO Darwin: How to get the install name of world's dll in the exe?
+### if [ $os != "Darwin" ]; then
+###     execute $grtr_inst_bld/sources/greeter hcgreeter-static
+###     check_exe_dependencies $grtr_inst_bld/sources/greeter hcgreeter-shared
+###     execute $grtr_inst_bld/sources/greeter hcgreeter-shared
+### fi
+### 
+### # From install location.
+### if [ $os == "Darwin" ]; then
+###     execute $grtr_inst hcgreeter-static
+###     check_exe_dependencies $grtr_inst hcgreeter-shared
+###     execute $grtr_inst hcgreeter-shared
+### else
+###     execute $grtr_inst/bin hcgreeter-static
+###     check_exe_dependencies $grtr_inst/bin hcgreeter-shared
+###     execute $grtr_inst/bin hcgreeter-shared
+### fi
+### 
+### # Move world's install location to make sure its targets are not used by
+### # greeter's targets.
+### rm -fr ${wrld_inst}_moved
+### mv $wrld_inst ${wrld_inst}_moved
+### 
+### # From install location.
+### # Targets are not allowed to depend on world's install location.
+### if [ $os == "Darwin" ]; then
+###     execute $grtr_inst hcgreeter-static
+###     check_exe_dependencies $grtr_inst hcgreeter-shared
+###     execute $grtr_inst hcgreeter-shared
+### else
+###     execute $grtr_inst/bin hcgreeter-static
+###     check_exe_dependencies $grtr_inst/bin hcgreeter-shared
+###     execute $grtr_inst/bin hcgreeter-shared
+### fi
+### 
+### # Move greeter's install location to make sure its targets don't depend on the
+### # install location.
+### rm -fr ${grtr_inst}_moved
+### mv $grtr_inst ${grtr_inst}_moved
+### 
+### if [ $os == "Darwin" ]; then
+###     execute ${grtr_inst}_moved hcgreeter-static
+###     check_exe_dependencies ${grtr_inst}_moved hcgreeter-shared
+###     execute ${grtr_inst}_moved hcgreeter-shared
+### else
+###     execute ${grtr_inst}_moved/bin hcgreeter-static
+###     check_exe_dependencies ${grtr_inst}_moved/bin hcgreeter-shared
+###     execute ${grtr_inst}_moved/bin hcgreeter-shared
+### fi
+### 
+### find ${grtr_inst}_moved

@@ -44,30 +44,50 @@ INSTALL(
 #     RUNTIME DESTINATION bin COMPONENT Runtime
 # )
 
-# IF(HC_ENABLE_FIXUP_BUNDLE)
-#     IF(UNIX AND NOT APPLE)
-#         SET_TARGET_PROPERTIES(
-#             greeter-shared
-#             PROPERTIES
-#                 INSTALL_RPATH "\$ORIGIN"
-#         )
-#     ENDIF()
-# 
-#     IF(APPLE)
-#         SET(APPS "\${CMAKE_INSTALL_PREFIX}/greeter-shared.app")
-#     ELSEIF(WIN32)
-#         SET(APPS "\${CMAKE_INSTALL_PREFIX}/bin/greeter-shared.exe")
-#     ELSE()
-#         SET(APPS "\${CMAKE_INSTALL_PREFIX}/bin/greeter-shared")
-#     ENDIF()
-# 
-#     INSTALL(CODE "
-#             INCLUDE(BundleUtilities)
-#             FIXUP_BUNDLE(
-#                 \"${APPS}\"
-#                 \"\"
-#                 \"${WORLD_ROOT}\")
-#         "
-#         COMPONENT Runtime)
-#                 # \"${WORLD_ROOT}/lib\")
-# ENDIF()
+IF(HC_ENABLE_FIXUP_BUNDLE)
+    IF(UNIX AND NOT APPLE)
+        SET_TARGET_PROPERTIES(
+            greeter-static
+            PROPERTIES
+                INSTALL_RPATH "\$ORIGIN"
+        )
+        SET_TARGET_PROPERTIES(
+            greeter-shared
+            PROPERTIES
+                INSTALL_RPATH "\$ORIGIN"
+        )
+    ENDIF()
+
+    IF(APPLE)
+        SET(APPS
+            "\${CMAKE_INSTALL_PREFIX}/greeter-static.app"
+            "\${CMAKE_INSTALL_PREFIX}/greeter-shared.app"
+        )
+    ELSEIF(WIN32)
+        SET(APPS
+            "\${CMAKE_INSTALL_PREFIX}/bin/greeter-static.exe"
+            "\${CMAKE_INSTALL_PREFIX}/bin/greeter-shared.exe"
+        )
+    ELSE()
+        SET(APPS
+            "\${CMAKE_INSTALL_PREFIX}/bin/greeter-static"
+            "\${CMAKE_INSTALL_PREFIX}/bin/greeter-shared"
+        )
+    ENDIF()
+
+    SET(DIRS
+        ${WORLD_ROOT}/lib
+        ${Boost_LIBRARY_DIRS}
+    )
+
+    INSTALL(CODE "
+            INCLUDE(BundleUtilities)
+            FOREACH(APP ${APPS})
+              FIXUP_BUNDLE(
+                  \"\${APP}\"
+                  \"\"
+                  \"${DIRS}\")
+            ENDFOREACH()
+        "
+        COMPONENT Runtime)
+ENDIF()
