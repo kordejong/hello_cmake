@@ -1,14 +1,4 @@
-SET(Boost_USE_STATIC_LIBS OFF)
-FIND_PACKAGE(Boost COMPONENTS chrono system REQUIRED)
-
-INCLUDE(
-    ${WORLD_ROOT}/lib/cmake/world/WorldTargets.cmake
-)
-
-INCLUDE_DIRECTORIES(
-    ${CMAKE_CURRENT_SOURCE_DIR}/..
-    ${WORLD_ROOT}/include
-)
+ADD_SUBDIRECTORY(tests)
 
 ADD_EXECUTABLE(greeter-static
     # MACOSX_BUNDLE

@@ -1,16 +1,4 @@
-SET(Boost_USE_STATIC_LIBS OFF)
-FIND_PACKAGE(Boost
-    COMPONENTS chrono python system unit_test_framework timer
-    REQUIRED)
-FIND_PACKAGE(PythonLibs REQUIRED)
-
 ADD_SUBDIRECTORY(tests)
-
-INCLUDE_DIRECTORIES(
-    ${CMAKE_CURRENT_SOURCE_DIR}/..
-    ${PYTHON_INCLUDE_DIRS}
-    ${Boost_INCLUDE_DIRS}
-)
 
 ADD_LIBRARY(world-static
     STATIC

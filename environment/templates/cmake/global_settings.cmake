@@ -1,4 +1,7 @@
 ENABLE_TESTING()
+SET(BOOST_TEST_RUNTIME_PARAMETERS --log_level all)
+
+INCLUDE(CPack)
 
 # Whether or not to create a bundle with all prerequisites included.
 SET(HC_ENABLE_FIXUP_BUNDLE ON CACHE BOOL

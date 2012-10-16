@@ -203,8 +203,8 @@ cd ..
 
 # Exectute from build directory should just work.
 new_test "Execute from build directory"
-cmake --build $wrld_inst_bld
-CTEST_OUTPUT_ON_FAILURE=1 cmake --build $wrld_inst_bld --target test
+cmake --build $wrld_inst_bld --config $build_type
+CTEST_OUTPUT_ON_FAILURE=1 cmake --build $wrld_inst_bld --config $build_type --target test
 if [ $check_world_dependencies == 1 ]; then
     print_message "Dependencies in $wrld_inst_bld:"
     check_exe_dependencies $wrld_inst_bld/sources/world turn_world-static
@@ -218,7 +218,7 @@ PYTHONPATH=$wrld_inst_bld/sources/world python -c "import world; \
 
 # Exectute from install directory should work, given the ld_library_path.
 new_test "Execute from install build directory"
-cmake --build $wrld_inst_bld --target install
+cmake --build $wrld_inst_bld --config $build_type --target install
 if [ $check_world_dependencies == 1 ]; then
     print_message "Dependencies in $world_inst:"
     check_exe_dependencies $wrld_inst/bin turn_world-static $ld_library_path
@@ -233,13 +233,13 @@ LD_LIBRARY_PATH=$ld_library_path PYTHONPATH=$wrld_inst/python/world \
 
 # Configure for package target, creating a self-contained package.
 cd $wrld_pkg_bld
-cmake -L $world_cmake_options -DHC_ENABLE_FIXUP_BUNDLE:BOOL=ON $wrld_src
+cmake $world_cmake_options -DHC_ENABLE_FIXUP_BUNDLE:BOOL=ON $wrld_src
 cd ..
 
 # Exectute from build directory should just work. Absolute paths to shared
 # libs baked into exes and dlls.
 new_test "Execute from package build directory"
-cmake --build $wrld_pkg_bld
+cmake --build $wrld_pkg_bld --config $build_type
 if [ $check_world_dependencies == 1 ]; then
     print_message "Dependencies in $wrld_pkg_bld:"
     check_exe_dependencies $wrld_pkg_bld/sources/world turn_world-static
@@ -254,7 +254,7 @@ PYTHONPATH=$wrld_pkg_bld/sources/world python -c "import world; \
 # Exectute from unpack directory should just work. Relative paths to shared
 # libs baked into exes and dlls.
 new_test "Execute from unpack directory"
-cmake --build $wrld_pkg_bld --target package
+cmake --build $wrld_pkg_bld --config $build_type --target package
 unpack_package "WORLD" $wrld_pkg_bld $wrld_unpk prefix
 if [ $check_world_dependencies == 1 ]; then
     print_message "Dependencies in $prefix:"
@@ -290,12 +290,13 @@ mkdir $grtr_inst_bld $grtr_pkg_bld $grtr_unpk
 # Configure for standard install target, without creating a self-contained
 # package.
 cd $grtr_inst_bld
-cmake -L $greeter_cmake_options -DHC_ENABLE_FIXUP_BUNDLE:BOOL=OFF $grtr_src
+cmake $greeter_cmake_options -DHC_ENABLE_FIXUP_BUNDLE:BOOL=OFF $grtr_src
 cd ..
 
 # Execute from build directory should just work.
 new_test "Execute from install build directory"
-cmake --build $grtr_inst_bld
+cmake --build $grtr_inst_bld --config $build_type
+CTEST_OUTPUT_ON_FAILURE=1 cmake --build $grtr_inst_bld --config $build_type --target test
 if [ $check_greeter_dependencies == 1 ]; then
     print_message "Dependencies in $grt_inst_bld:"
     check_exe_dependencies $grtr_inst_bld/sources/greeter greeter-static
@@ -306,7 +307,7 @@ execute $grtr_inst_bld/sources/greeter greeter-shared
 
 # Exectute from install directory should work, given the ld_library_path.
 new_test "Execute from install directory"
-cmake --build $grtr_inst_bld --target install
+cmake --build $grtr_inst_bld --config $build_type --target install
 if [ $check_greeter_dependencies == 1 ]; then
     print_message "Dependencies in $grtr_inst:"
     check_exe_dependencies $grtr_inst/bin greeter-static \
@@ -319,12 +320,12 @@ execute $grtr_inst/bin greeter-shared $ld_library_path:$wrld_inst/lib
 
 # Configure for package target, creating a self-contained package.
 cd $grtr_pkg_bld
-cmake -L $greeter_cmake_options -DHC_ENABLE_FIXUP_BUNDLE:BOOL=ON $grtr_src
+cmake $greeter_cmake_options -DHC_ENABLE_FIXUP_BUNDLE:BOOL=ON $grtr_src
 cd ..
 
 # Execute from build directory should just work.
 new_test "Execute from package build directory"
-cmake --build $grtr_pkg_bld
+cmake --build $grtr_pkg_bld --config $build_type
 if [ $check_greeter_dependencies == 1 ]; then
     print_message "Dependencies in $grtr_pkg_bld:"
     check_exe_dependencies $grtr_pkg_bld/sources/greeter greeter-static
@@ -336,7 +337,7 @@ execute $grtr_pkg_bld/sources/greeter greeter-shared
 # Exectute from unpack directory should just work. Relative paths to shared
 # libs baked into exes and dlls.
 new_test "Execute from unpack directory"
-cmake --build $grtr_pkg_bld --target package
+cmake --build $grtr_pkg_bld --config $build_type --target package
 unpack_package "GREETER" $grtr_pkg_bld $grtr_unpk prefix
 if [ $check_greeter_dependencies == 1 ]; then
     print_message "Dependencies in $prefix:"
