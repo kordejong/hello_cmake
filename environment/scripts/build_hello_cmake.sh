@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 set -e
-set -x
 
 ld_library_path="$1"
 shift
@@ -221,7 +220,7 @@ mkdir $wrld_inst_bld $wrld_pkg_bld $wrld_unpk
 set -e
 cd $wrld_inst_bld
 # -DHC_ENABLE_FIXUP_BUNDLE:BOOL=OFF
-cmake $world_cmake_options $wrld_src
+cmake -G "Visual Studio 9 2008" $world_cmake_options $wrld_src
 cd ..
 
 # Exectute from build directory should just work. It is fine if paths to
@@ -243,6 +242,8 @@ execute $wrld_inst_bld/sources/world turn_world-static "install_build"
 execute $wrld_inst_bld/sources/world turn_world-shared "install_build"
 PYTHONPATH=$wrld_inst_bld/sources/world python -c "import world; \
     print(\"Hello {} from Python!\".format(world.World().name))"
+
+exit 0
 
 # Exectute from install directory should work, given the ld_library_path.
 new_test "Execute from install directory"

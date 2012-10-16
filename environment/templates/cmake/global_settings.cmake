@@ -5,6 +5,11 @@ SET(BOOST_TEST_RUNTIME_PARAMETERS --log_level all)
 # SET(HC_ENABLE_FIXUP_BUNDLE ON CACHE BOOL
 #     "Configure to create a bundle instead of for a regular install")
 
+# Turn off automatic linking. It is confusing.
+ADD_DEFINITIONS(
+    -DBOOST_ALL_NO_LIB
+)
+
 IF(UNIX)
     SET(CPACK_GENERATOR "TGZ")
 

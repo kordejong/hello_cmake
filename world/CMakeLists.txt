@@ -3,6 +3,7 @@ PROJECT(WORLD)
 INCLUDE(global_settings)
 
 SET(Boost_USE_STATIC_LIBS OFF)
+SET(Boost_USE_STATIC_RUNTIME OFF)
 FIND_PACKAGE(Boost
     COMPONENTS chrono python system unit_test_framework timer
     REQUIRED)
