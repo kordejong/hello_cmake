@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 set -e
-set -x
 
 ld_library_path="$1"
 shift
@@ -204,11 +203,12 @@ mkdir $wrld_inst_bld $wrld_pkg_bld $wrld_unpk
 # package.
 set -e
 cd $wrld_inst_bld
-cmake $world_cmake_options -DHC_ENABLE_FIXUP_BUNDLE:BOOL=OFF $wrld_src
+cmake -G "Visual Studio 9 2008" $world_cmake_options -DHC_ENABLE_FIXUP_BUNDLE:BOOL=OFF $wrld_src
 cd ..
 
 # Exectute from build directory should just work.
 new_test "Execute from build directory"
+set -x
 cmake --build $wrld_inst_bld --config $build_type
 CTEST_OUTPUT_ON_FAILURE=1 cmake --build $wrld_inst_bld --config $build_type --target test
 if [ $check_world_dependencies == 1 ]; then
@@ -221,6 +221,8 @@ execute $wrld_inst_bld/sources/world turn_world-static
 execute $wrld_inst_bld/sources/world turn_world-shared
 PYTHONPATH=$wrld_inst_bld/sources/world python -c "import world; \
     print(\"Hello {} from Python!\".format(world.World().name))"
+
+exit 0
 
 # Exectute from install directory should work, given the ld_library_path.
 new_test "Execute from install build directory"
