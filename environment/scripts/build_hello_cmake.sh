@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -e
+set -x
 
 ld_library_path="$1"
 shift
@@ -173,8 +174,12 @@ if [ ! $HELLO_CMAKE_ROOT ]; then
 fi
 
 
+os=`uname -o`
 build_type="Release"
 build_root="$HOME/tmp"
+if [ $os == "Cygwin" ]; then
+    build_root=`cygpath -m $build_root`
+fi
 
 
 # Build, install, package the world project. -----------------------------------
@@ -197,6 +202,7 @@ mkdir $wrld_inst_bld $wrld_pkg_bld $wrld_unpk
 
 # Configure for standard install target, without creating a self-contained
 # package.
+set -e
 cd $wrld_inst_bld
 cmake $world_cmake_options -DHC_ENABLE_FIXUP_BUNDLE:BOOL=OFF $wrld_src
 cd ..
