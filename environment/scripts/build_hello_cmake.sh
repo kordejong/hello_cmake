@@ -198,12 +198,13 @@ mkdir $wrld_inst_bld $wrld_pkg_bld $wrld_unpk
 # Configure for standard install target, without creating a self-contained
 # package.
 cd $wrld_inst_bld
-cmake -L $world_cmake_options -DHC_ENABLE_FIXUP_BUNDLE:BOOL=OFF $wrld_src
+cmake $world_cmake_options -DHC_ENABLE_FIXUP_BUNDLE:BOOL=OFF $wrld_src
 cd ..
 
 # Exectute from build directory should just work.
 new_test "Execute from build directory"
 cmake --build $wrld_inst_bld
+CTEST_OUTPUT_ON_FAILURE=1 cmake --build $wrld_inst_bld --target test
 if [ $check_world_dependencies == 1 ]; then
     print_message "Dependencies in $wrld_inst_bld:"
     check_exe_dependencies $wrld_inst_bld/sources/world turn_world-static
