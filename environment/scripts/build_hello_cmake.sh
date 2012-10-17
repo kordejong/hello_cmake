@@ -26,7 +26,8 @@ function executable_name() {
     if [ $os == "GNU/Linux" ]; then
         eval $variable_name=$prefix/$target
     elif [ $os == "Darwin" ]; then
-        eval $variable_name=$prefix/$target.app/Contents/MacOS/$target
+        eval $variable_name=$prefix/$target
+        # eval $variable_name=$prefix/$target.app/Contents/MacOS/$target
     elif [ $os == "Cygwin" ]; then
         eval $variable_name=$prefix/$target.exe
     else
@@ -44,7 +45,8 @@ function extension_name() {
     if [ $os == "GNU/Linux" ]; then
         eval $variable_name=$prefix/$target.so
     elif [ $os == "Darwin" ]; then
-        eval $variable_name=$prefix/$target.app/Contents/MacOS/$target.pyd
+        eval $variable_name=$prefix/$target.so
+        # eval $variable_name=$prefix/$target.app/Contents/MacOS/$target.pyd
     elif [ $os == "Cygwin" ]; then
         eval $variable_name=$prefix/$target.pyd
     else
@@ -59,7 +61,8 @@ function execute() {
     local target=$2
     local ld_library_path=$3
     executable_name $prefix $target executable
-    LD_LIBRARY_PATH="$ld_library_path" $executable
+    # LD_LIBRARY_PATH="$ld_library_path"
+    $executable
 }
 
 
@@ -69,7 +72,8 @@ function check_dependencies() {
     echo $executable
     if [ $os == "GNU/Linux" ]; then
         chrpath --list $executable
-        LD_LIBRARY_PATH="$ld_library_path" ldd $executable
+        # LD_LIBRARY_PATH="$ld_library_path"
+        ldd $executable
     elif [ $os == "Darwin" ]; then
         otool -L $executable
     elif [ $os == "Cygwin" ]; then
@@ -204,13 +208,13 @@ cd ..
 # Exectute from build directory should just work.
 new_test "Execute from build directory"
 cmake --build $wrld_inst_bld --config $build_type
-CTEST_OUTPUT_ON_FAILURE=1 cmake --build $wrld_inst_bld --config $build_type --target test
 if [ $check_world_dependencies == 1 ]; then
     print_message "Dependencies in $wrld_inst_bld:"
     check_exe_dependencies $wrld_inst_bld/sources/world turn_world-static
     check_exe_dependencies $wrld_inst_bld/sources/world turn_world-shared
     check_pyd_dependencies $wrld_inst_bld/sources/world world
 fi
+CTEST_OUTPUT_ON_FAILURE=1 cmake --build $wrld_inst_bld --config $build_type --target test
 execute $wrld_inst_bld/sources/world turn_world-static
 execute $wrld_inst_bld/sources/world turn_world-shared
 PYTHONPATH=$wrld_inst_bld/sources/world python -c "import world; \
@@ -220,14 +224,15 @@ PYTHONPATH=$wrld_inst_bld/sources/world python -c "import world; \
 new_test "Execute from install build directory"
 cmake --build $wrld_inst_bld --config $build_type --target install
 if [ $check_world_dependencies == 1 ]; then
-    print_message "Dependencies in $world_inst:"
-    check_exe_dependencies $wrld_inst/bin turn_world-static $ld_library_path
-    check_exe_dependencies $wrld_inst/bin turn_world-shared $ld_library_path
-    check_pyd_dependencies $wrld_inst/python/world world $ld_library_path
+    print_message "Dependencies in $wrld_inst:"
+    check_exe_dependencies $wrld_inst/bin turn_world-static # $ld_library_path
+    check_exe_dependencies $wrld_inst/bin turn_world-shared # $ld_library_path
+    check_pyd_dependencies $wrld_inst/python/world world # $ld_library_path
 fi
-execute $wrld_inst/bin turn_world-static $ld_library_path
-execute $wrld_inst/bin turn_world-shared $ld_library_path
-LD_LIBRARY_PATH=$ld_library_path PYTHONPATH=$wrld_inst/python/world \
+execute $wrld_inst/bin turn_world-static # $ld_library_path
+execute $wrld_inst/bin turn_world-shared # $ld_library_path
+# LD_LIBRARY_PATH=$ld_library_path
+PYTHONPATH=$wrld_inst/python/world \
     python -c "import world; \
         print(\"Hello {} from Python!\".format(world.World().name))"
 
@@ -296,12 +301,12 @@ cd ..
 # Execute from build directory should just work.
 new_test "Execute from install build directory"
 cmake --build $grtr_inst_bld --config $build_type
-CTEST_OUTPUT_ON_FAILURE=1 cmake --build $grtr_inst_bld --config $build_type --target test
 if [ $check_greeter_dependencies == 1 ]; then
     print_message "Dependencies in $grt_inst_bld:"
     check_exe_dependencies $grtr_inst_bld/sources/greeter greeter-static
     check_exe_dependencies $grtr_inst_bld/sources/greeter greeter-shared
 fi
+CTEST_OUTPUT_ON_FAILURE=1 cmake --build $grtr_inst_bld --config $build_type --target test
 execute $grtr_inst_bld/sources/greeter greeter-static
 execute $grtr_inst_bld/sources/greeter greeter-shared
 
@@ -310,13 +315,13 @@ new_test "Execute from install directory"
 cmake --build $grtr_inst_bld --config $build_type --target install
 if [ $check_greeter_dependencies == 1 ]; then
     print_message "Dependencies in $grtr_inst:"
-    check_exe_dependencies $grtr_inst/bin greeter-static \
-        $ld_library_path:$wrld_inst/lib
-    check_exe_dependencies $grtr_inst/bin greeter-shared \
-        $ld_library_path:$wrld_inst/lib
+    check_exe_dependencies $grtr_inst/bin greeter-static # \
+        # $ld_library_path:$wrld_inst/lib
+    check_exe_dependencies $grtr_inst/bin greeter-shared # \
+        # $ld_library_path:$wrld_inst/lib
 fi
-execute $grtr_inst/bin greeter-static $ld_library_path:$wrld_inst/lib
-execute $grtr_inst/bin greeter-shared $ld_library_path:$wrld_inst/lib
+execute $grtr_inst/bin greeter-static # $ld_library_path:$wrld_inst/lib
+execute $grtr_inst/bin greeter-shared # $ld_library_path:$wrld_inst/lib
 
 # Configure for package target, creating a self-contained package.
 cd $grtr_pkg_bld

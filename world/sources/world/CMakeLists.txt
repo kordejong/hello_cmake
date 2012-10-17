@@ -14,6 +14,11 @@ ADD_LIBRARY(world-shared
     SHARED
     world
 )
+TARGET_LINK_LIBRARIES(world-shared
+    ${Boost_CHRONO_LIBRARY}
+    ${Boost_TIMER_LIBRARY}
+    ${Boost_SYSTEM_LIBRARY}
+)
 IF(${HC_ENABLE_FIXUP_BUNDLE})
     INSTALL(
         TARGETS world-shared
@@ -48,9 +53,6 @@ ADD_EXECUTABLE(turn_world-shared
 )
 TARGET_LINK_LIBRARIES(turn_world-shared
     world-shared
-    ${Boost_CHRONO_LIBRARY}
-    ${Boost_TIMER_LIBRARY}
-    ${Boost_SYSTEM_LIBRARY}
 )
 INSTALL(
     TARGETS turn_world-shared
@@ -64,9 +66,7 @@ ADD_LIBRARY(world-python
 )
 TARGET_LINK_LIBRARIES(world-python
     world-shared
-    ${Boost_CHRONO_LIBRARY}
     ${Boost_PYTHON_LIBRARY}
-    ${Boost_SYSTEM_LIBRARY}
     ${PYTHON_LIBRARIES}
 )
 IF(${HC_ENABLE_FIXUP_BUNDLE})
