@@ -4,11 +4,6 @@ ADD_LIBRARY(world-static
     STATIC
     world
 )
-INSTALL(
-    TARGETS world-static
-    DESTINATION lib
-    EXPORT WorldTargets
-)
 
 ADD_LIBRARY(world-shared
     SHARED
@@ -19,19 +14,19 @@ TARGET_LINK_LIBRARIES(world-shared
     ${Boost_TIMER_LIBRARY}
     ${Boost_SYSTEM_LIBRARY}
 )
-IF(${HC_ENABLE_FIXUP_BUNDLE})
-    INSTALL(
-        TARGETS world-shared
-        DESTINATION bin
-        EXPORT WorldTargets
-    )
-ELSE()
-    INSTALL(
-        TARGETS world-shared
-        DESTINATION lib
-        EXPORT WorldTargets
-    )
-ENDIF()
+# IF(${HC_ENABLE_FIXUP_BUNDLE})
+#     INSTALL(
+#         TARGETS world-shared
+#         DESTINATION bin
+#         EXPORT WorldTargets
+#     )
+# ELSE()
+#     INSTALL(
+#         TARGETS world-shared
+#         DESTINATION lib
+#         EXPORT WorldTargets
+#     )
+# ENDIF()
 
 ADD_EXECUTABLE(turn_world-static
     turn
@@ -42,11 +37,11 @@ TARGET_LINK_LIBRARIES(turn_world-static
     ${Boost_TIMER_LIBRARY}
     ${Boost_SYSTEM_LIBRARY}
 )
-INSTALL(
-    TARGETS turn_world-static
-    DESTINATION bin
-    EXPORT WorldTargets
-)
+# INSTALL(
+#     TARGETS turn_world-static
+#     EXPORT WorldTargets
+#     RUNTIME DESTINATION bin COMPONENT Runtime
+# )
 
 ADD_EXECUTABLE(turn_world-shared
     turn
@@ -54,11 +49,11 @@ ADD_EXECUTABLE(turn_world-shared
 TARGET_LINK_LIBRARIES(turn_world-shared
     world-shared
 )
-INSTALL(
-    TARGETS turn_world-shared
-    DESTINATION bin
-    EXPORT WorldTargets
-)
+# INSTALL(
+#     TARGETS turn_world-shared
+#     EXPORT WorldTargets
+#     RUNTIME DESTINATION bin COMPONENT Runtime
+# )
 
 ADD_LIBRARY(world-python
     SHARED
@@ -80,36 +75,49 @@ ELSE()
         "../../lib"
     )
 ENDIF()
+
+INSTALL(
+    TARGETS world-static world-shared turn_world-static turn_world-shared
+    EXPORT WorldTargets
+    ARCHIVE DESTINATION lib
+    RUNTIME DESTINATION bin
+    ARCHIVE DESTINATION lib
+    LIBRARY DESTINATION lib
+)
 INSTALL(
     TARGETS world-python
-    DESTINATION python/world
     EXPORT WorldTargets
+    DESTINATION python/world
 )
 
-IF(NOT ${HC_ENABLE_FIXUP_BUNDLE})
+# IF(NOT ${HC_ENABLE_FIXUP_BUNDLE})
     INSTALL(
         EXPORT WorldTargets
         DESTINATION lib/cmake/world
     )
-ENDIF()
-
+# ENDIF()
 INSTALL(
     FILES world.h
     DESTINATION include/world
 )
 
 IF(HC_ENABLE_FIXUP_BUNDLE)
-    IF(UNIX AND NOT APPLE)
-        SET_TARGET_PROPERTIES(
-            turn_world-static
-            PROPERTIES
-                INSTALL_RPATH "\$ORIGIN"
-        )
-        SET_TARGET_PROPERTIES(
-            turn_world-shared
-            PROPERTIES
-                INSTALL_RPATH "\$ORIGIN"
-        )
+    IF(UNIX)
+        IF(APPLE)
+            # SET_TARGET_PROPERTIES(turn_world-static turn_world-shared
+            #     PROPERTIES
+            #         MACOSX_BUNDLE TRUE
+            # )
+            # INSTALL(
+            #     TARGETS turn_world-static turn_world-shared
+            #     BUNDLE DESTINATION . COMPONENT Runtime
+            # )
+        ELSE()
+            SET_TARGET_PROPERTIES(turn_world-static turn_world-shared
+                PROPERTIES
+                    INSTALL_RPATH "\$ORIGIN"
+            )
+        ENDIF()
     ENDIF()
 
     IF(APPLE)

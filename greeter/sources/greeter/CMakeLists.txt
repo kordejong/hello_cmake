@@ -1,7 +1,6 @@
 ADD_SUBDIRECTORY(tests)
 
 ADD_EXECUTABLE(greeter-static
-    # MACOSX_BUNDLE
     main.cc
 )
 TARGET_LINK_LIBRARIES(greeter-static
@@ -11,11 +10,11 @@ TARGET_LINK_LIBRARIES(greeter-static
 )
 INSTALL(
     TARGETS greeter-static
-    DESTINATION bin
+    ARCHIVE DESTINATION bin
+    COMPONENT Runtime
 )
 
 ADD_EXECUTABLE(greeter-shared
-    # MACOSX_BUNDLE
     main.cc
 )
 TARGET_LINK_LIBRARIES(greeter-shared
@@ -25,16 +24,29 @@ TARGET_LINK_LIBRARIES(greeter-shared
 )
 INSTALL(
     TARGETS greeter-shared
-    DESTINATION bin
+    RUNTIME DESTINATION bin
+    COMPONENT Runtime
 )
 
-# INSTALL(
-#     TARGETS greeter-static greeter-shared
-#     BUNDLE DESTINATION . COMPONENT Runtime
-#     RUNTIME DESTINATION bin COMPONENT Runtime
-# )
-
 IF(HC_ENABLE_FIXUP_BUNDLE)
+    IF(UNIX)
+        IF(APPLE)
+            SET_TARGET_PROPERTIES(greeter-static greeter-shared
+                PROPERTIES
+                    MACOSX_BUNDLE TRUE
+            )
+            INSTALL(
+                TARGETS greeter-static greeter-shared
+                BUNDLE DESTINATION . COMPONENT Runtime
+            )
+        ELSE()
+            SET_TARGET_PROPERTIES(greeter-static greeter-shared
+                PROPERTIES
+                    INSTALL_RPATH "\$ORIGIN"
+            )
+        ENDIF()
+    ENDIF()
+
     # GET_TARGET_PROPERTY(
     #     TURN_WORLD-STATIC_LOCATION
     #     turn_world-static
@@ -62,19 +74,6 @@ IF(HC_ENABLE_FIXUP_BUNDLE)
     #     FILES ${WORLD-PYTHON_LOCATION}
     #     DESTINATION python/world
     # )
-
-    IF(UNIX AND NOT APPLE)
-        SET_TARGET_PROPERTIES(
-            greeter-static
-            PROPERTIES
-                INSTALL_RPATH "\$ORIGIN"
-        )
-        SET_TARGET_PROPERTIES(
-            greeter-shared
-            PROPERTIES
-                INSTALL_RPATH "\$ORIGIN"
-        )
-    ENDIF()
 
     IF(APPLE)
         SET(APPS

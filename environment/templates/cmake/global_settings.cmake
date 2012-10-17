@@ -1,8 +1,6 @@
 ENABLE_TESTING()
 SET(BOOST_TEST_RUNTIME_PARAMETERS --log_level all)
 
-INCLUDE(CPack)
-
 # Whether or not to create a bundle with all prerequisites included.
 SET(HC_ENABLE_FIXUP_BUNDLE ON CACHE BOOL
     "Configure to create a bundle instead of for a regular install")
@@ -11,7 +9,7 @@ IF(UNIX)
     SET(CPACK_GENERATOR "TGZ")
 
     IF(APPLE)
-        SET(CPACK_BINARY_DRAGNDROP ON)
+        # SET(CPACK_BINARY_DRAGNDROP ON)
 
         # Mac doesn't have rpath, it has install name. See the otool and
         # install_name_tool commands.
@@ -80,3 +78,5 @@ MACRO(CONFIGURE_PYTHON_EXTENSION
         )
     ENDIF()
 ENDMACRO(CONFIGURE_PYTHON_EXTENSION)
+
+INCLUDE(CPack)
