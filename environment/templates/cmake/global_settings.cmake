@@ -1,9 +1,9 @@
 ENABLE_TESTING()
 SET(BOOST_TEST_RUNTIME_PARAMETERS --log_level all)
 
-# Whether or not to create a bundle with all prerequisites included.
-SET(HC_ENABLE_FIXUP_BUNDLE ON CACHE BOOL
-    "Configure to create a bundle instead of for a regular install")
+# # Whether or not to create a bundle with all prerequisites included.
+# SET(HC_ENABLE_FIXUP_BUNDLE ON CACHE BOOL
+#     "Configure to create a bundle instead of for a regular install")
 
 IF(UNIX)
     SET(CPACK_GENERATOR "TGZ")

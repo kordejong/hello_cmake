@@ -64,30 +64,33 @@ TARGET_LINK_LIBRARIES(world-python
     ${Boost_PYTHON_LIBRARY}
     ${PYTHON_LIBRARIES}
 )
-IF(${HC_ENABLE_FIXUP_BUNDLE})
-    CONFIGURE_PYTHON_EXTENSION(world-python
-        "world"
-        "../../bin"
-    )
-ELSE()
+# IF(${HC_ENABLE_FIXUP_BUNDLE})
+#     CONFIGURE_PYTHON_EXTENSION(world-python
+#         "world"
+#         "../../bin"
+#     )
+# ELSE()
     CONFIGURE_PYTHON_EXTENSION(world-python
         "world"
         "../../lib"
     )
-ENDIF()
+# ENDIF()
 
 INSTALL(
     TARGETS world-static world-shared turn_world-static turn_world-shared
     EXPORT WorldTargets
     ARCHIVE DESTINATION lib
-    RUNTIME DESTINATION bin
-    ARCHIVE DESTINATION lib
     LIBRARY DESTINATION lib
+    RUNTIME DESTINATION bin
 )
 INSTALL(
     TARGETS world-python
     EXPORT WorldTargets
     DESTINATION python/world
+)
+INSTALL(
+    FILES world.h
+    DESTINATION include/world
 )
 
 # IF(NOT ${HC_ENABLE_FIXUP_BUNDLE})
@@ -96,66 +99,62 @@ INSTALL(
         DESTINATION lib/cmake/world
     )
 # ENDIF()
-INSTALL(
-    FILES world.h
-    DESTINATION include/world
-)
 
-IF(HC_ENABLE_FIXUP_BUNDLE)
-    IF(UNIX)
-        IF(APPLE)
-            # SET_TARGET_PROPERTIES(turn_world-static turn_world-shared
-            #     PROPERTIES
-            #         MACOSX_BUNDLE TRUE
-            # )
-            # INSTALL(
-            #     TARGETS turn_world-static turn_world-shared
-            #     BUNDLE DESTINATION . COMPONENT Runtime
-            # )
-        ELSE()
-            SET_TARGET_PROPERTIES(turn_world-static turn_world-shared
-                PROPERTIES
-                    INSTALL_RPATH "\$ORIGIN"
-            )
-        ENDIF()
-    ENDIF()
-
-    IF(APPLE)
-        SET(APPS
-            "\${CMAKE_INSTALL_PREFIX}/turn_world-static.app"
-            "\${CMAKE_INSTALL_PREFIX}/turn_world-shared.app"
-        )
-    ELSEIF(WIN32)
-        SET(APPS
-            "\${CMAKE_INSTALL_PREFIX}/bin/turn_world-static.exe"
-            "\${CMAKE_INSTALL_PREFIX}/bin/turn_world-shared.exe"
-        )
-    ELSE()
-        SET(APPS
-            "\${CMAKE_INSTALL_PREFIX}/bin/turn_world-static"
-            "\${CMAKE_INSTALL_PREFIX}/bin/turn_world-shared"
-        )
-    ENDIF()
-
-    SET(DIRS
-        ${Boost_LIBRARY_DIRS}
-    )
-
-    INSTALL(CODE "
-            INCLUDE(BundleUtilities)
-            FOREACH(APP ${APPS})
-                FIXUP_BUNDLE(
-                    \"\${APP}\"
-                    \"\"
-                    \"${DIRS}\")
-            ENDFOREACH()
-        "
-        COMPONENT Runtime)
-
-    # Install stuff not detected by FIXUP_BUNDLE.
-    FOREACH(NAME ${Boost_PYTHON_LIBRARY} ${PYTHON_LIBRARIES})
-        GET_FILENAME_COMPONENT(REAL_PATH ${NAME} REALPATH)
-        SET(REAL_PATHS ${REAL_PATHS} ${REAL_PATH})
-    ENDFOREACH()
-    INSTALL(FILES ${REAL_PATHS} DESTINATION bin)
-ENDIF()
+# IF(HC_ENABLE_FIXUP_BUNDLE)
+#     IF(UNIX)
+#         IF(APPLE)
+#             # SET_TARGET_PROPERTIES(turn_world-static turn_world-shared
+#             #     PROPERTIES
+#             #         MACOSX_BUNDLE TRUE
+#             # )
+#             # INSTALL(
+#             #     TARGETS turn_world-static turn_world-shared
+#             #     BUNDLE DESTINATION . COMPONENT Runtime
+#             # )
+#         ELSE()
+#             SET_TARGET_PROPERTIES(turn_world-static turn_world-shared
+#                 PROPERTIES
+#                     INSTALL_RPATH "\$ORIGIN"
+#             )
+#         ENDIF()
+#     ENDIF()
+# 
+#     IF(APPLE)
+#         SET(APPS
+#             "\${CMAKE_INSTALL_PREFIX}/turn_world-static.app"
+#             "\${CMAKE_INSTALL_PREFIX}/turn_world-shared.app"
+#         )
+#     ELSEIF(WIN32)
+#         SET(APPS
+#             "\${CMAKE_INSTALL_PREFIX}/bin/turn_world-static.exe"
+#             "\${CMAKE_INSTALL_PREFIX}/bin/turn_world-shared.exe"
+#         )
+#     ELSE()
+#         SET(APPS
+#             "\${CMAKE_INSTALL_PREFIX}/bin/turn_world-static"
+#             "\${CMAKE_INSTALL_PREFIX}/bin/turn_world-shared"
+#         )
+#     ENDIF()
+# 
+#     SET(DIRS
+#         ${Boost_LIBRARY_DIRS}
+#     )
+# 
+#     INSTALL(CODE "
+#             INCLUDE(BundleUtilities)
+#             FOREACH(APP ${APPS})
+#                 FIXUP_BUNDLE(
+#                     \"\${APP}\"
+#                     \"\"
+#                     \"${DIRS}\")
+#             ENDFOREACH()
+#         "
+#         COMPONENT Runtime)
+# 
+#     # Install stuff not detected by FIXUP_BUNDLE.
+#     FOREACH(NAME ${Boost_PYTHON_LIBRARY} ${PYTHON_LIBRARIES})
+#         GET_FILENAME_COMPONENT(REAL_PATH ${NAME} REALPATH)
+#         SET(REAL_PATHS ${REAL_PATHS} ${REAL_PATH})
+#     ENDFOREACH()
+#     INSTALL(FILES ${REAL_PATHS} DESTINATION bin)
+# ENDIF()

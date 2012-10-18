@@ -17,6 +17,8 @@ else
     os=`uname`
 fi
 
+export CTEST_OUTPUT_ON_FAILURE=1
+
 
 function executable_name() {
     local prefix=$1
@@ -215,18 +217,21 @@ cd $wrld_inst_bld
 cmake $world_cmake_options -DHC_ENABLE_FIXUP_BUNDLE:BOOL=OFF $wrld_src
 cd ..
 
-set -x
-
-# Exectute from build directory should just work.
+# Exectute from build directory should just work. It is fine if paths to
+# external dlls are hardcoded in the exes and dlls. It is not fine if
+# environment settings like LD_LIBRARY_PATH on Linux are needed to be able
+# to use the targets.
 new_test "Execute from install build directory"
 cmake --build $wrld_inst_bld --config $build_type
 if [ $check_world_dependencies == 1 ]; then
     print_message "Dependencies in $wrld_inst_bld:"
-    check_exe_dependencies $wrld_inst_bld/sources/world turn_world-static "install_build"
-    check_exe_dependencies $wrld_inst_bld/sources/world turn_world-shared "install_build"
+    check_exe_dependencies $wrld_inst_bld/sources/world turn_world-static \
+        "install_build"
+    check_exe_dependencies $wrld_inst_bld/sources/world turn_world-shared \
+        "install_build"
     check_pyd_dependencies $wrld_inst_bld/sources/world world
 fi
-CTEST_OUTPUT_ON_FAILURE=1 cmake --build $wrld_inst_bld --config $build_type --target test
+cmake --build $wrld_inst_bld --config $build_type --target test
 execute $wrld_inst_bld/sources/world turn_world-static "install_build"
 execute $wrld_inst_bld/sources/world turn_world-shared "install_build"
 PYTHONPATH=$wrld_inst_bld/sources/world python -c "import world; \
@@ -237,8 +242,10 @@ new_test "Execute from install directory"
 cmake --build $wrld_inst_bld --config $build_type --target install
 if [ $check_world_dependencies == 1 ]; then
     print_message "Dependencies in $wrld_inst:"
-    check_exe_dependencies $wrld_inst/bin turn_world-static "install" # $ld_library_path
-    check_exe_dependencies $wrld_inst/bin turn_world-shared "install" # $ld_library_path
+    check_exe_dependencies $wrld_inst/bin turn_world-static "install"
+        # $ld_library_path
+    check_exe_dependencies $wrld_inst/bin turn_world-shared "install"
+        # $ld_library_path
     check_pyd_dependencies $wrld_inst/python/world world # $ld_library_path
 fi
 execute $wrld_inst/bin turn_world-static "install" # $ld_library_path
@@ -248,43 +255,41 @@ PYTHONPATH=$wrld_inst/python/world \
     python -c "import world; \
         print(\"Hello {} from Python!\".format(world.World().name))"
 
-# Configure for package target, creating a self-contained package.
-cd $wrld_pkg_bld
-cmake $world_cmake_options -DHC_ENABLE_FIXUP_BUNDLE:BOOL=ON $wrld_src
-cd ..
-
-# Exectute from build directory should just work. Absolute paths to shared
-# libs baked into exes and dlls.
-new_test "Execute from package build directory"
-cmake --build $wrld_pkg_bld --config $build_type
-if [ $check_world_dependencies == 1 ]; then
-    print_message "Dependencies in $wrld_pkg_bld:"
-    check_exe_dependencies $wrld_pkg_bld/sources/world turn_world-static "package_build"
-    check_exe_dependencies $wrld_pkg_bld/sources/world turn_world-shared "package_build"
-    check_pyd_dependencies $wrld_pkg_bld/sources/world world
-fi
-execute $wrld_pkg_bld/sources/world turn_world-static "package_build"
-execute $wrld_pkg_bld/sources/world turn_world-shared "package_build"
-PYTHONPATH=$wrld_pkg_bld/sources/world python -c "import world; \
-    print(\"Hello {} from Python!\".format(world.World().name))"
-
-# Exectute from unpack directory should just work. Relative paths to shared
-# libs baked into exes and dlls.
-new_test "Execute from unpack directory"
-cmake --build $wrld_pkg_bld --config $build_type --target package
-unpack_package "WORLD" $wrld_pkg_bld $wrld_unpk prefix
-if [ $check_world_dependencies == 1 ]; then
-    print_message "Dependencies in $prefix:"
-    check_exe_dependencies $prefix/bin turn_world-static "unpack"
-    check_exe_dependencies $prefix/bin turn_world-shared "unpack"
-    check_pyd_dependencies $prefix/python/world world
-fi
-execute $prefix/bin turn_world-static "unpack"
-execute $prefix/bin turn_world-shared "unpack"
-PYTHONPATH=$prefix/python/world python -c "import world; \
-    print(\"Hello {} from Python!\".format(world.World().name))"
-
-exit 0
+### # Configure for package target, creating a self-contained package.
+### cd $wrld_pkg_bld
+### cmake $world_cmake_options -DHC_ENABLE_FIXUP_BUNDLE:BOOL=ON $wrld_src
+### cd ..
+### 
+### # Exectute from build directory should just work. Absolute paths to shared
+### # libs baked into exes and dlls.
+### new_test "Execute from package build directory"
+### cmake --build $wrld_pkg_bld --config $build_type
+### if [ $check_world_dependencies == 1 ]; then
+###     print_message "Dependencies in $wrld_pkg_bld:"
+###     check_exe_dependencies $wrld_pkg_bld/sources/world turn_world-static "package_build"
+###     check_exe_dependencies $wrld_pkg_bld/sources/world turn_world-shared "package_build"
+###     check_pyd_dependencies $wrld_pkg_bld/sources/world world
+### fi
+### execute $wrld_pkg_bld/sources/world turn_world-static "package_build"
+### execute $wrld_pkg_bld/sources/world turn_world-shared "package_build"
+### PYTHONPATH=$wrld_pkg_bld/sources/world python -c "import world; \
+###     print(\"Hello {} from Python!\".format(world.World().name))"
+### 
+### # Exectute from unpack directory should just work. Relative paths to shared
+### # libs baked into exes and dlls.
+### new_test "Execute from unpack directory"
+### cmake --build $wrld_pkg_bld --config $build_type --target package
+### unpack_package "WORLD" $wrld_pkg_bld $wrld_unpk prefix
+### if [ $check_world_dependencies == 1 ]; then
+###     print_message "Dependencies in $prefix:"
+###     check_exe_dependencies $prefix/bin turn_world-static "unpack"
+###     check_exe_dependencies $prefix/bin turn_world-shared "unpack"
+###     check_pyd_dependencies $prefix/python/world world
+### fi
+### execute $prefix/bin turn_world-static "unpack"
+### execute $prefix/bin turn_world-shared "unpack"
+### PYTHONPATH=$prefix/python/world python -c "import world; \
+###     print(\"Hello {} from Python!\".format(world.World().name))"
 
 # Build, install, package the greeter project. ---------------------------------
 grtr_src="$HELLO_CMAKE_ROOT/greeter"
@@ -316,10 +321,12 @@ new_test "Execute from install build directory"
 cmake --build $grtr_inst_bld --config $build_type
 if [ $check_greeter_dependencies == 1 ]; then
     print_message "Dependencies in $grt_inst_bld:"
-    check_exe_dependencies $grtr_inst_bld/sources/greeter greeter-static "install_build"
-    check_exe_dependencies $grtr_inst_bld/sources/greeter greeter-shared "install_build"
+    check_exe_dependencies $grtr_inst_bld/sources/greeter greeter-static \
+        "install_build"
+    check_exe_dependencies $grtr_inst_bld/sources/greeter greeter-shared \
+        "install_build"
 fi
-CTEST_OUTPUT_ON_FAILURE=1 cmake --build $grtr_inst_bld --config $build_type --target test
+cmake --build $grtr_inst_bld --config $build_type --target test
 execute $grtr_inst_bld/sources/greeter greeter-static "install_build"
 execute $grtr_inst_bld/sources/greeter greeter-shared "install_build"
 
@@ -328,49 +335,51 @@ new_test "Execute from install directory"
 cmake --build $grtr_inst_bld --config $build_type --target install
 if [ $check_greeter_dependencies == 1 ]; then
     print_message "Dependencies in $grtr_inst:"
-    check_exe_dependencies $grtr_inst/bin greeter-static "install" # \
+    check_exe_dependencies $grtr_inst/bin greeter-static "install"
         # $ld_library_path:$wrld_inst/lib
-    check_exe_dependencies $grtr_inst/bin greeter-shared "install" # \
+    check_exe_dependencies $grtr_inst/bin greeter-shared "install"
         # $ld_library_path:$wrld_inst/lib
 fi
-execute $grtr_inst/bin greeter-static "install" # $ld_library_path:$wrld_inst/lib
-execute $grtr_inst/bin greeter-shared "install" # $ld_library_path:$wrld_inst/lib
+execute $grtr_inst/bin greeter-static "install"
+    # $ld_library_path:$wrld_inst/lib
+execute $grtr_inst/bin greeter-shared "install"
+    # $ld_library_path:$wrld_inst/lib
 
-# Configure for package target, creating a self-contained package.
-cd $grtr_pkg_bld
-cmake $greeter_cmake_options -DHC_ENABLE_FIXUP_BUNDLE:BOOL=ON $grtr_src
-cd ..
-
-# Execute from build directory should just work.
-new_test "Execute from package build directory"
-cmake --build $grtr_pkg_bld --config $build_type
-if [ $check_greeter_dependencies == 1 ]; then
-    print_message "Dependencies in $grtr_pkg_bld:"
-    check_exe_dependencies $grtr_pkg_bld/sources/greeter greeter-static "package_build"
-    check_exe_dependencies $grtr_pkg_bld/sources/greeter greeter-shared "package_build"
-fi
-execute $grtr_pkg_bld/sources/greeter greeter-static "package_build"
-execute $grtr_pkg_bld/sources/greeter greeter-shared "package_build"
-
-# Exectute from unpack directory should just work. Relative paths to shared
-# libs baked into exes and dlls.
-new_test "Execute from unpack directory"
-cmake --build $grtr_pkg_bld --config $build_type --target package
-unpack_package "GREETER" $grtr_pkg_bld $grtr_unpk prefix
-if [ $check_greeter_dependencies == 1 ]; then
-    print_message "Dependencies in $prefix:"
-    # check_exe_dependencies $prefix/bin turn_world-static
-    # check_exe_dependencies $prefix/bin turn_world-shared
-    check_exe_dependencies $prefix/bin greeter-static "unpack"
-    check_exe_dependencies $prefix/bin greeter-shared "unpack"
-    # check_pyd_dependencies $prefix/python/world world
-fi
-# execute $prefix/bin turn_world-static
-# execute $prefix/bin turn_world-shared
-execute $prefix/bin greeter-static "unpack"
-execute $prefix/bin greeter-shared "unpack"
-# PYTHONPATH=$prefix/python/world python -c "import world; \
-#     print(\"Hello {} from Python!\".format(world.World().name))"
+### # Configure for package target, creating a self-contained package.
+### cd $grtr_pkg_bld
+### cmake $greeter_cmake_options -DHC_ENABLE_FIXUP_BUNDLE:BOOL=ON $grtr_src
+### cd ..
+### 
+### # Execute from build directory should just work.
+### new_test "Execute from package build directory"
+### cmake --build $grtr_pkg_bld --config $build_type
+### if [ $check_greeter_dependencies == 1 ]; then
+###     print_message "Dependencies in $grtr_pkg_bld:"
+###     check_exe_dependencies $grtr_pkg_bld/sources/greeter greeter-static "package_build"
+###     check_exe_dependencies $grtr_pkg_bld/sources/greeter greeter-shared "package_build"
+### fi
+### execute $grtr_pkg_bld/sources/greeter greeter-static "package_build"
+### execute $grtr_pkg_bld/sources/greeter greeter-shared "package_build"
+### 
+### # Exectute from unpack directory should just work. Relative paths to shared
+### # libs baked into exes and dlls.
+### new_test "Execute from unpack directory"
+### cmake --build $grtr_pkg_bld --config $build_type --target package
+### unpack_package "GREETER" $grtr_pkg_bld $grtr_unpk prefix
+### if [ $check_greeter_dependencies == 1 ]; then
+###     print_message "Dependencies in $prefix:"
+###     # check_exe_dependencies $prefix/bin turn_world-static
+###     # check_exe_dependencies $prefix/bin turn_world-shared
+###     check_exe_dependencies $prefix/bin greeter-static "unpack"
+###     check_exe_dependencies $prefix/bin greeter-shared "unpack"
+###     # check_pyd_dependencies $prefix/python/world world
+### fi
+### # execute $prefix/bin turn_world-static
+### # execute $prefix/bin turn_world-shared
+### execute $prefix/bin greeter-static "unpack"
+### execute $prefix/bin greeter-shared "unpack"
+### # PYTHONPATH=$prefix/python/world python -c "import world; \
+### #     print(\"Hello {} from Python!\".format(world.World().name))"
 
 
 
