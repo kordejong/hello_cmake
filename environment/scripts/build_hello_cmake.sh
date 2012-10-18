@@ -203,7 +203,7 @@ wrld_unpk="$build_root/world_unpack"
 world_cmake_options="
     -DCMAKE_MODULE_PATH:PATH="$HELLO_CMAKE_ROOT/environment/templates/cmake"
     -DCMAKE_BUILD_TYPE=$build_type
-    -DCMAKE_INSTALL_PREFIX:PATH="$wrld_inst"
+    # -DCMAKE_INSTALL_PREFIX:PATH="$wrld_inst"
     $general_cmake_options
 "
 
@@ -214,7 +214,8 @@ mkdir $wrld_inst_bld $wrld_pkg_bld $wrld_unpk
 # Configure for standard install target, without creating a self-contained
 # package.
 cd $wrld_inst_bld
-cmake $world_cmake_options -DHC_ENABLE_FIXUP_BUNDLE:BOOL=OFF $wrld_src
+# -DHC_ENABLE_FIXUP_BUNDLE:BOOL=OFF
+cmake $world_cmake_options $wrld_src
 cd ..
 
 # Exectute from build directory should just work. It is fine if paths to
@@ -313,7 +314,8 @@ mkdir $grtr_inst_bld $grtr_pkg_bld $grtr_unpk
 # Configure for standard install target, without creating a self-contained
 # package.
 cd $grtr_inst_bld
-cmake $greeter_cmake_options -DHC_ENABLE_FIXUP_BUNDLE:BOOL=OFF $grtr_src
+# -DHC_ENABLE_FIXUP_BUNDLE:BOOL=OFF
+cmake $greeter_cmake_options $grtr_src
 cd ..
 
 # Execute from build directory should just work.

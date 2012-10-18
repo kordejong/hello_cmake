@@ -22,6 +22,9 @@ IF(UNIX)
 
         # During installation, use this install name setting. This assumes
         # that all dll's are installed in <install prefix>/lib.
+        # TODO Doesn't work in the case of the Python extension. The
+        #      INSTALL_NAME_DIR set by CONFIGURE_PYTHON_EXTENSION does
+        #      not end up in the extension.
         # SET(CMAKE_INSTALL_NAME_DIR "@executable_path/../lib")
 
         SET(CMAKE_INSTALL_NAME_DIR "${CMAKE_INSTALL_PREFIX}/lib")
@@ -68,7 +71,7 @@ MACRO(CONFIGURE_PYTHON_EXTENSION
             PROPERTIES
                 PREFIX ""
                 SUFFIX ".so"
-                # INSTALL_NAME_DIR "@executable_path/${RPATH}"
+                INSTALL_NAME_DIR "@executable_path/${RPATH}"
         )
     ELSE()
         SET_TARGET_PROPERTIES(${EXTENTION_TARGET}
