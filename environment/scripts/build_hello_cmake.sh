@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 set -e
 
-ld_library_path="$1"
+cmake_generator="$1"
+ld_library_path="$2"
+shift
 shift
 general_cmake_options="$*"
 
@@ -291,6 +293,7 @@ fi
 
 
 os=`uname -o`
+build_type="Release"
 build_root="$HOME/tmp"
 if [ $os == "Cygwin" ]; then
     build_root=`cygpath -m $build_root`
@@ -319,7 +322,7 @@ mkdir $wrld_inst_bld $wrld_pkg_bld $wrld_unpk
 # package.
 set -e
 cd $wrld_inst_bld
-cmake -G "Visual Studio 9 2008" $world_cmake_options $wrld_src
+cmake -G "$cmake_generator" $world_cmake_options $wrld_src
 cd ..
 
 # Exectute from build directory should just work. It is fine if paths to
@@ -341,6 +344,8 @@ run_tests $wrld_inst_bld $ld_library_path
 execute $wrld_inst_bld/bin turn_world-static "install_build" $ld_library_path
 execute $wrld_inst_bld/bin turn_world-shared "install_build" $ld_library_path
 try_python_extension $wrld_inst_bld/lib "install_build" $ld_library_path
+
+exit 0
 
 # Exectute from install directory should work, given the ld_library_path.
 new_test "Execute from install directory"
@@ -415,7 +420,7 @@ mkdir $grtr_inst_bld $grtr_pkg_bld $grtr_unpk
 # Configure for standard install target, without creating a self-contained
 # package.
 cd $grtr_inst_bld
-cmake -G "Visual Studio 9 2008" $greeter_cmake_options $grtr_src
+cmake -G "$cmake_generator" $greeter_cmake_options $grtr_src
 cd ..
 
 # Execute from build directory should just work.
