@@ -331,7 +331,6 @@ cd ..
 # to use the targets.
 new_test "Execute from install build directory"
 cmake --build $wrld_inst_bld --config $build_type
-set -x
 if [ $check_world_dependencies == 1 ]; then
     print_message "Dependencies in $wrld_inst_bld:"
     check_exe_dependencies $wrld_inst_bld/bin turn_world-static \
