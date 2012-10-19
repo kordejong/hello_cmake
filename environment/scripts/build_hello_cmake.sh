@@ -345,8 +345,6 @@ execute $wrld_inst_bld/bin turn_world-static "install_build" $ld_library_path
 execute $wrld_inst_bld/bin turn_world-shared "install_build" $ld_library_path
 try_python_extension $wrld_inst_bld/lib "install_build" $ld_library_path
 
-exit 0
-
 # Exectute from install directory should work, given the ld_library_path.
 new_test "Execute from install directory"
 cmake --build $wrld_inst_bld --config $build_type --target install
