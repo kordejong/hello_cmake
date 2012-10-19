@@ -5,6 +5,5 @@ TARGET_LINK_LIBRARIES(greeter_test
     ${Boost_SYSTEM_LIBRARY}
 )
 
-ADD_TEST(
-    greeter_test ${CMAKE_CURRENT_BINARY_DIR}/greeter_test
-    $BOOST_TEST_RUNTIME_PARAMETERS)
+ADD_TEST(NAME greeter_test
+    COMMAND greeter_test $BOOST_TEST_RUNTIME_PARAMETERS)

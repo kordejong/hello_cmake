@@ -1,13 +1,14 @@
-#ifndef INCLUDED_HELLO_CMAKE_WORLD
-#define INCLUDED_HELLO_CMAKE_WORLD
+#ifndef INCLUDED_HELLO_CMAKE_WORLD_WORLD
+#define INCLUDED_HELLO_CMAKE_WORLD_WORLD
 
 
 #include <string>
+#include "world/config.h"
 
 
 namespace hc {
 
-class World
+class WORLD_DECL World
 {
 
 public:

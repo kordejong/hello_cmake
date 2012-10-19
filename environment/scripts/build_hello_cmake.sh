@@ -17,6 +17,8 @@ else
     os=`uname`
 fi
 
+build_type="Release"
+
 export CTEST_OUTPUT_ON_FAILURE=1
 
 
@@ -39,7 +41,11 @@ function executable_name() {
             eval $variable_name=$prefix/$target
         fi
     elif [ $os == "Cygwin" ]; then
-        eval $variable_name=$prefix/$target.exe
+        if [ $start_location == "install_build" ]; then
+            eval $variable_name=$prefix/$build_type/$target.exe
+        else
+            eval $variable_name=$prefix/$target.exe
+        fi
     else
         echo "Unknown OS"
         exit 1
@@ -50,7 +56,8 @@ function executable_name() {
 function extension_name() {
     local prefix=$1
     local target=$2
-    local variable_name=$3
+    local start_location=$3
+    local variable_name=$4
 
     if [ $os == "GNU/Linux" ]; then
         eval $variable_name=$prefix/$target.so
@@ -58,7 +65,11 @@ function extension_name() {
         eval $variable_name=$prefix/$target.so
         # eval $variable_name=$prefix/$target.app/Contents/MacOS/$target.pyd
     elif [ $os == "Cygwin" ]; then
-        eval $variable_name=$prefix/$target.pyd
+        if [ $start_location == "install_build" ]; then
+            eval $variable_name=$prefix/$build_type/$target.pyd
+        else
+            eval $variable_name=$prefix/$target.pyd
+        fi
     else
         echo "Unknown OS"
         exit 1
@@ -71,24 +82,103 @@ function execute() {
     local target=$2
     local start_location=$3
     local ld_library_path=$4
+    local ext_project_root=$5
+
     executable_name $prefix $target $start_location executable
-    # LD_LIBRARY_PATH="$ld_library_path"
-    $executable
+
+    if [ $ext_project_root != "" ]; then
+        if [ $os == "Cygwin" ]; then
+            ld_library_path="`cygpath -u $ext_project_root`/bin:$ld_library_path"
+        fi
+    fi
+
+    if [ $os == "GNU/Linux" ]; then
+        $executable
+    elif [ $os == "Darwin" ]; then
+        $executable
+    elif [ $os == "Cygwin" ]; then
+        if [ $start_location == "install_build" ]; then
+            ld_library_path="`cygpath -u $prefix`/../lib/$build_type:$ld_library_path"
+        else
+            ld_library_path="`cygpath -u $prefix`/../lib:$ld_library_path"
+        fi
+        PATH="$ld_library_path:$PATH" $executable
+    else
+        echo "Unknown OS"
+        exit 1
+    fi
+}
+
+
+try_python_extension() {
+    local python_path=$1
+    local start_location=$2
+    local ld_library_path=$3
+    local script="import world; \
+        print(\"Hello {} from Python!\".format(world.World().name))"
+
+    if [ $os == "GNU/Linux" ]; then
+        PYTHONPATH=$python_path python -c "$script"
+    elif [ $os == "Darwin" ]; then
+        PYTHONPATH=$python_path python -c "$script"
+    elif [ $os == "Cygwin" ]; then
+        if [ $start_location == "install_build" ]; then
+            ld_library_path="`cygpath -u $python_path`/../lib/$build_type:$ld_library_path"
+            python_path="$python_path/$build_type"
+        else
+            ld_library_path="`cygpath -u $python_path`/../../bin:$ld_library_path"
+        fi
+        PATH="$ld_library_path:$PATH" \
+            PYTHONPATH=$python_path python -c "$script"
+    else
+        echo "Unknown OS"
+        exit 1
+    fi
+}
+
+
+function run_tests() {
+    local prefix=$1
+    local ld_library_path=$2
+    local ext_project_root=$3
+
+    if [ $ext_project_root != "" ]; then
+        if [ $os == "Cygwin" ]; then
+            ld_library_path="`cygpath -u $ext_project_root`/bin:$ld_library_path"
+        fi
+    fi
+
+    if [ $os == "GNU/Linux" ]; then
+        cmake --build $wrld_inst_bld --config $build_type --target test
+    elif [ $os == "Darwin" ]; then
+        cmake --build $wrld_inst_bld --config $build_type --target test
+    elif [ $os == "Cygwin" ]; then
+        PATH="$ld_library_path:`cygpath -u $prefix`/lib/$build_type:$PATH" \
+            cmake --build $prefix --config $build_type --target run_tests
+    else
+        echo "Unknown OS"
+        exit 1
+    fi
 }
 
 
 function check_dependencies() {
     local executable=$1
-    local ld_library_path=$2
+    local start_location=$2
+    local ld_library_path=$3
     echo $executable
     if [ $os == "GNU/Linux" ]; then
         chrpath --list $executable
-        # LD_LIBRARY_PATH="$ld_library_path"
         ldd $executable
     elif [ $os == "Darwin" ]; then
         otool -L $executable
     elif [ $os == "Cygwin" ]; then
-        cygcheck $executable
+        if [ $start_location == "install_build" ]; then
+            ld_library_path="`dirname \`cygpath -u $executable\``/../../lib/$build_type:$ld_library_path"
+        else
+            ld_library_path="`dirname \`cygpath -u $executable\``/../lib:$ld_library_path"
+        fi
+        PATH="$ld_library_path:$PATH" cygcheck $executable
     else
         echo "Unknown OS"
         exit 1
@@ -101,17 +191,28 @@ function check_exe_dependencies() {
     local target=$2
     local start_location=$3
     local ld_library_path=$4
+    local ext_project_root=$5
+
+    if [ $ext_project_root != "" ]; then
+        if [ $os == "Cygwin" ]; then
+            ld_library_path="`cygpath -u $ext_project_root`/bin:$ld_library_path"
+        # else
+        #     ld_library_path="$ext_project_root/lib:$ld_library_path"
+        fi
+    fi
+
     executable_name $prefix $target $start_location executable
-    check_dependencies $executable $ld_library_path
+    check_dependencies $executable $start_location $ld_library_path
 }
 
 
 function check_pyd_dependencies() {
     local prefix=$1
     local target=$2
-    local ld_library_path=$3
-    extension_name $prefix $target extension
-    check_dependencies $extension $ld_library_path
+    local start_location=$3
+    local ld_library_path=$4
+    extension_name $prefix $target $start_location extension
+    check_dependencies $extension $start_location $ld_library_path
 }
 
 
@@ -190,7 +291,6 @@ fi
 
 
 os=`uname -o`
-build_type="Release"
 build_root="$HOME/tmp"
 if [ $os == "Cygwin" ]; then
     build_root=`cygpath -m $build_root`
@@ -219,7 +319,6 @@ mkdir $wrld_inst_bld $wrld_pkg_bld $wrld_unpk
 # package.
 set -e
 cd $wrld_inst_bld
-# -DHC_ENABLE_FIXUP_BUNDLE:BOOL=OFF
 cmake -G "Visual Studio 9 2008" $world_cmake_options $wrld_src
 cd ..
 
@@ -229,39 +328,34 @@ cd ..
 # to use the targets.
 new_test "Execute from install build directory"
 cmake --build $wrld_inst_bld --config $build_type
+set -x
 if [ $check_world_dependencies == 1 ]; then
     print_message "Dependencies in $wrld_inst_bld:"
-    check_exe_dependencies $wrld_inst_bld/sources/world turn_world-static \
-        "install_build"
-    check_exe_dependencies $wrld_inst_bld/sources/world turn_world-shared \
-        "install_build"
-    check_pyd_dependencies $wrld_inst_bld/sources/world world
+    check_exe_dependencies $wrld_inst_bld/bin turn_world-static \
+        "install_build" $ld_library_path
+    check_exe_dependencies $wrld_inst_bld/bin turn_world-shared \
+        "install_build" $ld_library_path
+    check_pyd_dependencies $wrld_inst_bld/lib world "install_build" $ld_library_path
 fi
-cmake --build $wrld_inst_bld --config $build_type --target test
-execute $wrld_inst_bld/sources/world turn_world-static "install_build"
-execute $wrld_inst_bld/sources/world turn_world-shared "install_build"
-PYTHONPATH=$wrld_inst_bld/sources/world python -c "import world; \
-    print(\"Hello {} from Python!\".format(world.World().name))"
-
-exit 0
+run_tests $wrld_inst_bld $ld_library_path
+execute $wrld_inst_bld/bin turn_world-static "install_build" $ld_library_path
+execute $wrld_inst_bld/bin turn_world-shared "install_build" $ld_library_path
+try_python_extension $wrld_inst_bld/lib "install_build" $ld_library_path
 
 # Exectute from install directory should work, given the ld_library_path.
 new_test "Execute from install directory"
 cmake --build $wrld_inst_bld --config $build_type --target install
 if [ $check_world_dependencies == 1 ]; then
     print_message "Dependencies in $wrld_inst:"
-    check_exe_dependencies $wrld_inst/bin turn_world-static "install"
-        # $ld_library_path
-    check_exe_dependencies $wrld_inst/bin turn_world-shared "install"
-        # $ld_library_path
-    check_pyd_dependencies $wrld_inst/python/world world # $ld_library_path
+    check_exe_dependencies $wrld_inst/bin turn_world-static "install" \
+        $ld_library_path
+    check_exe_dependencies $wrld_inst/bin turn_world-shared "install" \
+        $ld_library_path
+    check_pyd_dependencies $wrld_inst/python/world world "install" $ld_library_path
 fi
-execute $wrld_inst/bin turn_world-static "install" # $ld_library_path
-execute $wrld_inst/bin turn_world-shared "install" # $ld_library_path
-# LD_LIBRARY_PATH=$ld_library_path
-PYTHONPATH=$wrld_inst/python/world \
-    python -c "import world; \
-        print(\"Hello {} from Python!\".format(world.World().name))"
+execute $wrld_inst/bin turn_world-static "install" $ld_library_path
+execute $wrld_inst/bin turn_world-shared "install" $ld_library_path
+try_python_extension $wrld_inst/python/world "install" $ld_library_path
 
 ### # Configure for package target, creating a self-contained package.
 ### cd $wrld_pkg_bld
@@ -321,8 +415,7 @@ mkdir $grtr_inst_bld $grtr_pkg_bld $grtr_unpk
 # Configure for standard install target, without creating a self-contained
 # package.
 cd $grtr_inst_bld
-# -DHC_ENABLE_FIXUP_BUNDLE:BOOL=OFF
-cmake $greeter_cmake_options $grtr_src
+cmake -G "Visual Studio 9 2008" $greeter_cmake_options $grtr_src
 cd ..
 
 # Execute from build directory should just work.
@@ -330,29 +423,27 @@ new_test "Execute from install build directory"
 cmake --build $grtr_inst_bld --config $build_type
 if [ $check_greeter_dependencies == 1 ]; then
     print_message "Dependencies in $grt_inst_bld:"
-    check_exe_dependencies $grtr_inst_bld/sources/greeter greeter-static \
-        "install_build"
-    check_exe_dependencies $grtr_inst_bld/sources/greeter greeter-shared \
-        "install_build"
+    check_exe_dependencies $grtr_inst_bld/bin greeter-static \
+        "install_build" $ld_library_path $wrld_inst
+    check_exe_dependencies $grtr_inst_bld/bin greeter-shared \
+        "install_build" $ld_library_path $wrld_inst
 fi
-cmake --build $grtr_inst_bld --config $build_type --target test
-execute $grtr_inst_bld/sources/greeter greeter-static "install_build"
-execute $grtr_inst_bld/sources/greeter greeter-shared "install_build"
+run_tests $grtr_inst_bld $ld_library_path $wrld_inst
+execute $grtr_inst_bld/bin greeter-static "install_build" $ld_library_path $wrld_inst
+execute $grtr_inst_bld/bin greeter-shared "install_build" $ld_library_path $wrld_inst
 
 # Exectute from install directory should work, given the ld_library_path.
 new_test "Execute from install directory"
 cmake --build $grtr_inst_bld --config $build_type --target install
 if [ $check_greeter_dependencies == 1 ]; then
     print_message "Dependencies in $grtr_inst:"
-    check_exe_dependencies $grtr_inst/bin greeter-static "install"
-        # $ld_library_path:$wrld_inst/lib
-    check_exe_dependencies $grtr_inst/bin greeter-shared "install"
-        # $ld_library_path:$wrld_inst/lib
+    check_exe_dependencies $grtr_inst/bin greeter-static "install" \
+        $ld_library_path $wrld_inst
+    check_exe_dependencies $grtr_inst/bin greeter-shared "install" \
+        $ld_library_path $wrld_inst
 fi
-execute $grtr_inst/bin greeter-static "install"
-    # $ld_library_path:$wrld_inst/lib
-execute $grtr_inst/bin greeter-shared "install"
-    # $ld_library_path:$wrld_inst/lib
+execute $grtr_inst/bin greeter-static "install" $ld_library_path $wrld_inst
+execute $grtr_inst/bin greeter-shared "install" $ld_library_path $wrld_inst
 
 ### # Configure for package target, creating a self-contained package.
 ### cd $grtr_pkg_bld
