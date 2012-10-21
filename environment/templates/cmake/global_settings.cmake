@@ -1,29 +1,17 @@
 ENABLE_TESTING()
+
 SET(BOOST_TEST_RUNTIME_PARAMETERS --log_level all)
 
-# # Whether or not to create a bundle with all prerequisites included.
-# SET(HC_ENABLE_FIXUP_BUNDLE ON CACHE BOOL
-#     "Configure to create a bundle instead of for a regular install")
-
-# Turn off automatic linking. It is confusing.
 ADD_DEFINITIONS(
+    # Turn off automatic linking. It is confusing.
     -DBOOST_ALL_NO_LIB
 )
 
 SET(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin)
 SET(LIBRARY_OUTPUT_PATH ${PROJECT_BINARY_DIR}/lib)
 
-# Turn off automatic linking. It is confusing.
-ADD_DEFINITIONS(
-    -DBOOST_ALL_NO_LIB
-)
-
 IF(UNIX)
-    SET(CPACK_GENERATOR "TGZ")
-
     IF(APPLE)
-        # SET(CPACK_BINARY_DRAGNDROP ON)
-
         # Mac doesn't have rpath, it has install name. See the otool and
         # install_name_tool commands.
 
@@ -40,6 +28,7 @@ IF(UNIX)
         #      not end up in the extension.
         # SET(CMAKE_INSTALL_NAME_DIR "@executable_path/../lib")
 
+        # For now, put the install prefix in install name.
         SET(CMAKE_INSTALL_NAME_DIR "${CMAKE_INSTALL_PREFIX}/lib")
     ELSE()
         # Update the rpath of exes and dlls.
@@ -57,10 +46,6 @@ IF(UNIX)
         # and dlls.
         SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
     ENDIF()
-ELSEIF(WIN32)
-    SET(CPACK_GENERATOR "ZIP")
-
-    # TODO Make sure our exes/dlls find only our dlls.
 ENDIF()
 
 
@@ -84,7 +69,8 @@ MACRO(CONFIGURE_PYTHON_EXTENSION
             PROPERTIES
                 PREFIX ""
                 SUFFIX ".so"
-                INSTALL_NAME_DIR "@executable_path/${RPATH}"
+                # Doesn't work...
+                # INSTALL_NAME_DIR "@executable_path/${RPATH}"
         )
     ELSE()
         SET_TARGET_PROPERTIES(${EXTENTION_TARGET}
@@ -94,5 +80,3 @@ MACRO(CONFIGURE_PYTHON_EXTENSION
         )
     ENDIF()
 ENDMACRO(CONFIGURE_PYTHON_EXTENSION)
-
-INCLUDE(CPack)

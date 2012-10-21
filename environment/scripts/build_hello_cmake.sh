@@ -88,7 +88,7 @@ function execute() {
 
     executable_name $prefix $target $start_location executable
 
-    if [ $ext_project_root != "" ]; then
+    if [ "$ext_project_root" != "" ]; then
         if [ $os == "Cygwin" ]; then
             ld_library_path="`cygpath -u $ext_project_root`/bin:$ld_library_path"
         fi
@@ -144,7 +144,7 @@ function run_tests() {
     local ld_library_path=$2
     local ext_project_root=$3
 
-    if [ $ext_project_root != "" ]; then
+    if [ "$ext_project_root" != "" ]; then
         if [ $os == "Cygwin" ]; then
             ld_library_path="`cygpath -u $ext_project_root`/bin:$ld_library_path"
         fi
@@ -195,7 +195,7 @@ function check_exe_dependencies() {
     local ld_library_path=$4
     local ext_project_root=$5
 
-    if [ $ext_project_root != "" ]; then
+    if [ "$ext_project_root" != "" ]; then
         if [ $os == "Cygwin" ]; then
             ld_library_path="`cygpath -u $ext_project_root`/bin:$ld_library_path"
         # else
