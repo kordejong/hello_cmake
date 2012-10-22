@@ -84,15 +84,15 @@ function execute() {
     local target=$2
     local start_location=$3
     local ld_library_path=$4
-    # local ext_project_root=$5
+    local ext_project_root=$5
 
     executable_name $prefix $target $start_location executable
 
-    # if [ "$ext_project_root" != "" ]; then
-    #     if [ $os == "Cygwin" ]; then
-    #         ld_library_path="`cygpath -u $ext_project_root`/bin:$ld_library_path"
-    #     fi
-    # fi
+    if [ "$ext_project_root" != "" ]; then
+        if [ $os == "Cygwin" ]; then
+            ld_library_path="`cygpath -u $ext_project_root`/bin:$ld_library_path"
+        fi
+    fi
 
     if [ $os == "GNU/Linux" ]; then
         $executable
@@ -142,13 +142,13 @@ try_python_extension() {
 function run_tests() {
     local prefix=$1
     local ld_library_path=$2
-    # local ext_project_root=$3
+    local ext_project_root=$3
 
-    # if [ "$ext_project_root" != "" ]; then
-    #     if [ $os == "Cygwin" ]; then
-    #         ld_library_path="`cygpath -u $ext_project_root`/bin:$ld_library_path"
-    #     fi
-    # fi
+    if [ "$ext_project_root" != "" ]; then
+        if [ $os == "Cygwin" ]; then
+            ld_library_path="`cygpath -u $ext_project_root`/bin:$ld_library_path"
+        fi
+    fi
 
     if [ $os == "GNU/Linux" ]; then
         cmake --build $prefix --config $build_type --target test
@@ -178,7 +178,13 @@ function check_dependencies() {
         if [ $start_location == "build" ]; then
             ld_library_path="`dirname \`cygpath -u $executable\``/../../lib/$build_type:$ld_library_path"
         else
-            ld_library_path="`dirname \`cygpath -u $executable\``/../lib:$ld_library_path"
+            # In case executable is an exe/dll from the bin directory, then
+            # this directory needs to be added to the PATH. Otherwise the
+            # shared libs it depends on won't be found.
+            # In case executable is a Python extension, then the bin directory
+            # needs to be added to the PATH. Otherwise the shared libs it
+            # depends on won't be found.
+            ld_library_path="`dirname \`cygpath -u $executable\``:`dirname \`cygpath -u $executable\``/../../bin:$ld_library_path"
         fi
         PATH="$ld_library_path:$PATH" cygcheck $executable
     else
@@ -193,13 +199,13 @@ function check_exe_dependencies() {
     local target=$2
     local start_location=$3
     local ld_library_path=$4
-    # local ext_project_root=$5
+    local ext_project_root=$5
 
-    # if [ "$ext_project_root" != "" ]; then
-    #     if [ $os == "Cygwin" ]; then
-    #         ld_library_path="`cygpath -u $ext_project_root`/bin:$ld_library_path"
-    #     fi
-    # fi
+    if [ "$ext_project_root" != "" ]; then
+        if [ $os == "Cygwin" ]; then
+            ld_library_path="`cygpath -u $ext_project_root`/bin:$ld_library_path"
+        fi
+    fi
 
     executable_name $prefix $target $start_location executable
     check_dependencies $executable $start_location $ld_library_path
@@ -377,13 +383,13 @@ cmake --build $grtr_bld --config $build_type
 if [ $check_greeter_dependencies == 1 ]; then
     print_message "Dependencies in $grtr_bld:"
     check_exe_dependencies $grtr_bld/bin greeter-static \
-        "build" $ld_library_path # $install_prefix
+        "build" $ld_library_path $install_prefix
     check_exe_dependencies $grtr_bld/bin greeter-shared \
-        "build" $ld_library_path # $install_prefix
+        "build" $ld_library_path $install_prefix
 fi
-run_tests $grtr_bld $ld_library_path # $install_prefix
-execute $grtr_bld/bin greeter-static "build" $ld_library_path # $install_prefix
-execute $grtr_bld/bin greeter-shared "build" $ld_library_path # $install_prefix
+run_tests $grtr_bld $ld_library_path $install_prefix
+execute $grtr_bld/bin greeter-static "build" $ld_library_path $install_prefix
+execute $grtr_bld/bin greeter-shared "build" $ld_library_path $install_prefix
 
 # Exectute from install directory should work, given the ld_library_path.
 new_test "Execute from install directory"
@@ -391,10 +397,9 @@ cmake --build $grtr_bld --config $build_type --target install
 if [ $check_greeter_dependencies == 1 ]; then
     print_message "Dependencies in $install_prefix:"
     check_exe_dependencies $install_prefix/bin greeter-static "install" \
-        $ld_library_path # $install_prefix
+        $ld_library_path
     check_exe_dependencies $install_prefix/bin greeter-shared "install" \
-        $ld_library_path # $install_prefix
+        $ld_library_path
 fi
-execute $install_prefix/bin greeter-static "install" $ld_library_path # $install_prefix
-execute $install_prefix/bin greeter-shared "install" $ld_library_path # $install_prefix
-
+execute $install_prefix/bin greeter-static "install" $ld_library_path
+execute $install_prefix/bin greeter-shared "install" $ld_library_path
