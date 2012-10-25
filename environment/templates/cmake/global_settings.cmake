@@ -50,10 +50,11 @@ IF(UNIX)
 
         # During installation, use this rpath setting. This assumes that
         # all dll's are installed in <install prefix>/lib.
-        SET(CMAKE_INSTALL_RPATH "\$ORIGIN/../lib")
+        # SET(CMAKE_INSTALL_RPATH "\$ORIGIN/../lib")
+        SET(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
 
-        # During installation, put the path to the imported dlls in the exes
-        # and dlls.
+        # During installation, put the path to external (3rd party and
+        # imported) dlls in the exes and dlls.
         SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
     ENDIF()
 ENDIF()

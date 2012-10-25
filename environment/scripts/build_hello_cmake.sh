@@ -2,7 +2,8 @@
 set -e
 
 cmake_generator="$1"
-ld_library_path="$2"
+extern_prefix="$2"
+ld_library_path="$3"
 shift
 shift
 general_cmake_options="$*"
@@ -20,6 +21,9 @@ else
 fi
 
 build_type="Release"
+python_script="import world; \
+    print(\"Hello {} from Python!\".format(world.World().name))"
+
 
 export CTEST_OUTPUT_ON_FAILURE=1
 
@@ -116,13 +120,11 @@ try_python_extension() {
     local python_path=$1
     local start_location=$2
     local ld_library_path=$3
-    local script="import world; \
-        print(\"Hello {} from Python!\".format(world.World().name))"
 
     if [ $os == "GNU/Linux" ]; then
-        PYTHONPATH=$python_path python -c "$script"
+        PYTHONPATH=$python_path python -c "$python_script"
     elif [ $os == "Darwin" ]; then
-        PYTHONPATH=$python_path python -c "$script"
+        PYTHONPATH=$python_path python -c "$python_script"
     elif [ $os == "Cygwin" ]; then
         if [ $start_location == "build" ]; then
             ld_library_path="`cygpath -u $python_path`/../lib/$build_type:$ld_library_path"
@@ -131,7 +133,7 @@ try_python_extension() {
             ld_library_path="`cygpath -u $python_path`/../../bin:$ld_library_path"
         fi
         PATH="$ld_library_path:$PATH" \
-            PYTHONPATH=$python_path python -c "$script"
+            PYTHONPATH=$python_path python -c "$python_script"
     else
         echo "Unknown OS"
         exit 1
@@ -403,3 +405,12 @@ if [ $check_greeter_dependencies == 1 ]; then
 fi
 execute $install_prefix/bin greeter-static "install" $ld_library_path
 execute $install_prefix/bin greeter-shared "install" $ld_library_path
+
+set -x
+# Final test. Fixup the package and make sure minimal environment tweaks are
+# necessary to use the targets.
+# The fixup.py script can be found in the PCRaster DevEnv project sources:
+# http://sourceforge.net/projects/pcraster
+fixup.py $install_prefix $extern_prefix
+PATH="$install_prefix/bin:$PATH" greeter-shared
+PYTHONPATH=$install_prefix/python/world python -c "$python_script"
