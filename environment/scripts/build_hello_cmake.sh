@@ -406,11 +406,16 @@ fi
 execute $install_prefix/bin greeter-static "install" $ld_library_path
 execute $install_prefix/bin greeter-shared "install" $ld_library_path
 
-set -x
 # Final test. Fixup the package and make sure minimal environment tweaks are
 # necessary to use the targets.
 # The fixup.py script can be found in the PCRaster DevEnv project sources:
 # http://sourceforge.net/projects/pcraster
-fixup.py $install_prefix $extern_prefix
-PATH="$install_prefix/bin:$PATH" greeter-shared
-PYTHONPATH=$install_prefix/python/world python -c "$python_script"
+if [ $os == "Cygwin" ]; then
+    PATH="$ld_library_path:`cygpath --unix $install_prefix/bin`:$PATH" python `cygpath --mixed $DEVENV`/Scripts/fixup.py $install_prefix "`cygpath --mixed $extern_prefix`"
+    PATH="$ld_library_path:`cygpath --unix $install_prefix/bin`:$PATH" greeter-shared
+    PATH="`cygpath --unix $install_prefix/bin`:$PATH" PYTHONPATH=$install_prefix/python/world python -c "$python_script"
+else
+    python $DEVENV/Scripts/fixup.py $install_prefix $extern_prefix
+    PATH="$install_prefix/bin:$PATH" greeter-shared
+    PYTHONPATH=$install_prefix/python/world python -c "$python_script"
+fi
