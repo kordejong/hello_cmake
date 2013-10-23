@@ -413,6 +413,9 @@ execute $install_prefix/bin greeter-shared "install" $ld_library_path
 if [ $os == "Cygwin" ]; then
     PATH="$ld_library_path:`cygpath --unix $install_prefix/bin`:$PATH" python `cygpath --mixed $DEVENV`/Scripts/fixup.py $install_prefix "`cygpath --mixed $extern_prefix`"
     PATH="$ld_library_path:`cygpath --unix $install_prefix/bin`:$PATH" greeter-shared
+    # TODO This should work. The exe should find it dlls, without looking at
+    #      PATH.
+    # `cygpath --unix $install_prefix/bin`/greeter-shared
     PATH="`cygpath --unix $install_prefix/bin`:$PATH" PYTHONPATH=$install_prefix/python/world python -c "$python_script"
 else
     python $DEVENV/Scripts/fixup.py $install_prefix $extern_prefix

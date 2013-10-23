@@ -57,6 +57,19 @@ INSTALL(
     LIBRARY DESTINATION lib
     RUNTIME DESTINATION bin
 )
+# IF(WIN32)
+#     INSTALL(
+#         TARGETS world-shared
+#         EXPORT WorldTargets
+#         RUNTIME DESTINATION lib
+#     )
+# ELSE()
+#     INSTALL(
+#         TARGETS world-shared
+#         EXPORT WorldTargets
+#         LIBRARY DESTINATION lib
+#     )
+# ENDIF()
 INSTALL(
     TARGETS world-python
     EXPORT WorldTargets
